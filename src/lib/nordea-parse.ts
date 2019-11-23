@@ -5,14 +5,16 @@
 import fs = require('fs');
 import readline = require('readline');
 import {parseLine} from './nordea-parse-line';
+import {Payment} from './types';
 
-async function nordeaParse(filePath) {
+
+async function nordeaParse(filePath: string): Promise<Payment[]> {
     const lineReader = readline.createInterface({
     input: fs.createReadStream(filePath)
     });
 
     let rowCounter = 0;
-    let payments = [];
+    let payments: Payment[] = [];
 
     lineReader.on('line', (line) => {
         rowCounter++;
@@ -69,4 +71,4 @@ async function nordeaParse(filePath) {
 
 }
 
-module.exports.nordeaParse = nordeaParse;
+export {nordeaParse};

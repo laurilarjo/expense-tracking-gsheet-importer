@@ -1,6 +1,9 @@
 import fs = require('fs');
+import util = require('util');
 import readline = require('readline');
-import {google} from 'googleapis';
+import {google, oauth2_v2} from 'googleapis';
+import { OAuth2Client } from 'googleapis-common';
+import { Payment } from './lib/types';
 require('dotenv').config();
 const nordeaParse = require('./lib/nordea-parse').nordeaParse;
 
@@ -10,18 +13,29 @@ const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 // created automatically when the authorization flow completes for the first
 // time.
 const TOKEN_PATH = 'token.json';
+let readFile = util.promisify(fs.readFile);
 
-// Load client secrets from a local file.
-fs.readFile('credentials.json', (err, content) => {
-  if (err) return console.log('Error loading client secret file:', err);
-  // Authorize a client with credentials, then call the Google Sheets API.
-  authorize(JSON.parse(content.toString()), readNordeaData);
-});
+run();
 
-async function readNordeaData(auth) {
+async function run() {
+  // Load client secrets from a local file.
+  
+  try {
+    let content = await readFile('credentials.json');
+    console.log(content.toString());
+    
+    // Authorize a client with credentials, then call the Google Sheets API.
+    let oAuth2Client = await authorize(JSON.parse(content.toString())) as OAuth2Client;
+    let data = await readNordeaData(process.env.NORDEA_TRANSACTIONS_FILENAME);
+    await writeToSheets(oAuth2Client, data);
+  } catch (err) {
+    console.log('Error loading client secret file:', err);
+  }
+}
+
+async function readNordeaData(fileName: string) {
     console.log('read data');
-    let data = await nordeaParse(process.cwd() + '/' + process.env.NORDEA_TRANSACTIONS_FILENAME);
-    writeToSheets(auth, data);
+    return await nordeaParse(process.cwd() + '/' + fileName);
 }
 
 /**
@@ -30,17 +44,19 @@ async function readNordeaData(auth) {
  * @param {Object} credentials The authorization client credentials.
  * @param {function} callback The callback to call with the authorized client.
  */
-function authorize(credentials, callback) {
+async function authorize(credentials: any): Promise<OAuth2Client | void> {
   const {client_secret, client_id, redirect_uris} = credentials.installed;
   const oAuth2Client = new google.auth.OAuth2(
       client_id, client_secret, redirect_uris[0]);
 
   // Check if we have previously stored a token.
-  fs.readFile(TOKEN_PATH, (err, token) => {
-    if (err) return getNewToken(oAuth2Client, callback);
+  try {
+    let token = await readFile(TOKEN_PATH);
     oAuth2Client.setCredentials(JSON.parse(token.toString()));
-    callback(oAuth2Client);
-  });
+    return oAuth2Client;
+  } catch(err) {
+    return await getNewToken(oAuth2Client);
+  }
 }
 
 /**
@@ -49,7 +65,7 @@ function authorize(credentials, callback) {
  * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
  * @param {getEventsCallback} callback The callback for the authorized client.
  */
-function getNewToken(oAuth2Client, callback) {
+async function getNewToken(oAuth2Client: OAuth2Client): Promise<OAuth2Client | void> {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: SCOPES,
@@ -69,7 +85,7 @@ function getNewToken(oAuth2Client, callback) {
         if (err) return console.error(err);
         console.log('Token stored to', TOKEN_PATH);
       });
-      callback(oAuth2Client);
+      return oAuth2Client;
     });
   });
 }
@@ -77,10 +93,10 @@ function getNewToken(oAuth2Client, callback) {
 /**
  * Prints the names and majors of students in a sample spreadsheet:
  * @see https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
- * @param {google.auth.OAuth2} auth The authenticated Google OAuth client.
+ * @param {google.auth.OAuth2} oAuth2Client The authenticated Google OAuth client.
  */
-function writeToSheets(auth, data) {
-  const sheets = google.sheets({version: 'v4', auth});
+async function writeToSheets(oAuth2Client: OAuth2Client, data: Payment[]): Promise<void> {
+  const sheets = google.sheets({version: 'v4', auth: oAuth2Client});
   
   sheets.spreadsheets.values.get({
     spreadsheetId: process.env.SPREADSHEET_ID,

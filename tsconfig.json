@@ -5,7 +5,7 @@
         "allowJs": true,
         "target": "es2017",
         "allowUnusedLabels": true,
-        //"noImplicitAny": true,
+        "noImplicitAny": true,
     },
     "include": [
         "./src/**/*"

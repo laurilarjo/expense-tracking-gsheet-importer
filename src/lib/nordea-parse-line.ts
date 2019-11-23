@@ -1,4 +1,4 @@
-import fs = require('fs');
+import {Payment} from './types';
 
 export function parseLine(line: string) {
     if (line === '') {
@@ -22,32 +22,21 @@ export function parseLine(line: string) {
     // 12 - Kuitti
 
     const dateParts = lineArr[2].split('.');
-    const month = dateParts[1];
-    const year = dateParts[2];
-    const date = dateParts[0] + '/' + dateParts[1] + '/' + dateParts[2];
-    const payee = lineArr[4];
-    const transactionType = lineArr[7];
-    const message = lineArr[10];
+    let payment = new Payment();
+    payment.month = parseInt(dateParts[1]);
+    payment.year = parseInt(dateParts[2]);
+    payment.date = dateParts[0] + '/' + dateParts[1] + '/' + dateParts[2];
+    payment.payee = lineArr[4];
+    payment.transactionType = lineArr[7];
+    payment.message = lineArr[10];
+
     let amount = parseFloat(lineArr[3].replace(',', '.'));
-    let outflow = 0;
-    let inflow = 0;
-
+    
     if (amount > 0) {
-        inflow = amount;
+        payment.inflow = amount;
     } else {
-        outflow = -1 * amount;
+        payment.outflow = -1 * amount;
     }
-
-    const payment = {
-        month: month,
-        year: year,
-        date: date,
-        payee: payee,
-        transactionType: transactionType,
-        message: '"' + message + '"',
-        outflow: outflow,
-        inflow: inflow,
-    };
 
     return payment;
 }
