@@ -1,6 +1,6 @@
-const fs = require('fs');
-const readline = require('readline');
-const {google} = require('googleapis');
+import fs = require('fs');
+import readline = require('readline');
+import {google} from 'googleapis';
 require('dotenv').config();
 const nordeaParse = require('./lib/nordea-parse').nordeaParse;
 
@@ -15,7 +15,7 @@ const TOKEN_PATH = 'token.json';
 fs.readFile('credentials.json', (err, content) => {
   if (err) return console.log('Error loading client secret file:', err);
   // Authorize a client with credentials, then call the Google Sheets API.
-  authorize(JSON.parse(content), readNordeaData);
+  authorize(JSON.parse(content.toString()), readNordeaData);
 });
 
 async function readNordeaData(auth) {
@@ -38,7 +38,7 @@ function authorize(credentials, callback) {
   // Check if we have previously stored a token.
   fs.readFile(TOKEN_PATH, (err, token) => {
     if (err) return getNewToken(oAuth2Client, callback);
-    oAuth2Client.setCredentials(JSON.parse(token));
+    oAuth2Client.setCredentials(JSON.parse(token.toString()));
     callback(oAuth2Client);
   });
 }
@@ -103,7 +103,7 @@ function writeToSheets(auth, data) {
     spreadsheetId: process.env.SPREADSHEET_ID,
     range: 'Sheet1!A7:B8',
     valueInputOption: 'RAW',
-    resource: { 'values': [['mikko', 'pekka'], ['lotta', 'jessi']] }
+    requestBody: { 'values': [['mikko', 'pekka'], ['lotta', 'jessi']] }
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     

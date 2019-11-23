@@ -7,5 +7,8 @@
   "dependencies": {
     "dotenv": "^8.2.0",
     "googleapis": "^39.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^12.12.12"
   }
 }

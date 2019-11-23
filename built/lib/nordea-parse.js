@@ -1,51 +1,41 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 /**
- * Reads Nordea Finland bank's transaction files in TSV format and 
+ * Reads Nordea Finland bank's transaction files in TSV format and
  * outputs into Google Spreadsheet format.
  */
-const fs = require('fs');
-const readline = require('readline');
-const parseLine = require('./nordea-parse-line');
-
+const fs = require("fs");
+const readline = require("readline");
+const nordea_parse_line_1 = require("./nordea-parse-line");
 async function nordeaParse(filePath) {
     const lineReader = readline.createInterface({
-    input: fs.createReadStream(filePath)
+        input: fs.createReadStream(filePath)
     });
-
     let rowCounter = 0;
     let payments = [];
-
     lineReader.on('line', (line) => {
         rowCounter++;
-
         // Row 1 is header with account number, row 2 is empty, row 3 is the header row
         if (rowCounter === 1 || rowCounter === 3) {
             return;
         }
-
-        const payment = parseLine(line);
-
+        const payment = nordea_parse_line_1.parseLine(line);
         if (payment) {
             payments.push(payment);
         }
     });
-
     lineReader.on('close', () => {
         if (payments.length === 0) {
-            console.log('No payments parsed!')
+            console.log('No payments parsed!');
             process.exit(1);
         }
-
         const outputName = 'nordea-ynab-' + Date.now() + '.csv';
-
         const output = fs.createWriteStream(outputName);
-
         output.on('error', (err) => {
             console.log(err);
         });
-
-        output.write('Month;Year;Date;Payee;TransactionType;Message;Outflow;Inflow' + '\n')
-        console.log('Month;Year;Date;Payee;TransactionType;Message;Outflow;Inflow')
-
+        output.write('Month;Year;Date;Payee;TransactionType;Message;Outflow;Inflow' + '\n');
+        console.log('Month;Year;Date;Payee;TransactionType;Message;Outflow;Inflow');
         payments.forEach((payment) => {
             const paymentArr = [
                 payment.month,
@@ -57,16 +47,11 @@ async function nordeaParse(filePath) {
                 payment.outflow,
                 payment.inflow
             ];
-
             output.write(paymentArr.join(';') + '\n');
             console.log(paymentArr.join(';'));
         });
-
         output.end();
     });
-
     return payments;
-
 }
-
 module.exports.nordeaParse = nordeaParse;

@@ -1,10 +1,10 @@
-function parseLine (line) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+function parseLine(line) {
     if (line === '') {
         return null;
     }
-
     const lineArr = line.split('\t');
-
     // 0 - Kirjauspäivä
     // 1 - Arvopäivä
     // 2 - Maksupäivä
@@ -18,7 +18,6 @@ function parseLine (line) {
     // 10 - Viesti
     // 11 - Kortinnumero
     // 12 - Kuitti
-
     const dateParts = lineArr[2].split('.');
     const month = dateParts[1];
     const year = dateParts[2];
@@ -29,13 +28,12 @@ function parseLine (line) {
     let amount = parseFloat(lineArr[3].replace(',', '.'));
     let outflow = 0;
     let inflow = 0;
-
     if (amount > 0) {
         inflow = amount;
-    } else {
+    }
+    else {
         outflow = -1 * amount;
     }
-
     const payment = {
         month: month,
         year: year,
@@ -46,8 +44,6 @@ function parseLine (line) {
         outflow: outflow,
         inflow: inflow,
     };
-
     return payment;
 }
-
-module.exports = parseLine;
+exports.parseLine = parseLine;

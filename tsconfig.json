@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "outDir": "./built",
+        "allowJs": true,
+        "target": "es2017",
+        "allowUnusedLabels": true,
+        //"noImplicitAny": true,
+    },
+    "include": [
+        "./src/**/*"
+    ]
+}
