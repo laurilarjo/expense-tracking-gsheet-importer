@@ -1,0 +1,11 @@
+{
+  "name": "parse-nordea-fi-tsv",
+  "version": "1.0.0",
+  "main": "app.js",
+  "author": "Lauri Larjo, based on code by Wilhelm Törnroos",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "googleapis": "^39.2.0"
+  }
+}
