@@ -6,6 +6,7 @@
         "target": "es2017",
         "allowUnusedLabels": true,
         "noImplicitAny": true,
+        "strictNullChecks": true
     },
     "include": [
         "./src/**/*"

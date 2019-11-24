@@ -4,7 +4,8 @@ import readline = require('readline');
 import {google, oauth2_v2} from 'googleapis';
 import { OAuth2Client } from 'googleapis-common';
 import { Payment } from './lib/types';
-require('dotenv').config();
+import { Credentials } from 'google-auth-library';
+import config from './lib/config';
 const nordeaParse = require('./lib/nordea-parse').nordeaParse;
 
 // If modifying these scopes, delete token.json.
@@ -22,11 +23,10 @@ async function run() {
   
   try {
     let content = await readFile('credentials.json');
-    console.log(content.toString());
     
     // Authorize a client with credentials, then call the Google Sheets API.
     let oAuth2Client = await authorize(JSON.parse(content.toString())) as OAuth2Client;
-    let data = await readNordeaData(process.env.NORDEA_TRANSACTIONS_FILENAME);
+    let data = await readNordeaData(config.NORDEA_TRANSACTIONS_FILENAME);
     await writeToSheets(oAuth2Client, data);
   } catch (err) {
     console.log('Error loading client secret file:', err);
@@ -79,7 +79,7 @@ async function getNewToken(oAuth2Client: OAuth2Client): Promise<OAuth2Client | v
     rl.close();
     oAuth2Client.getToken(code, (err, token) => {
       if (err) return console.error('Error while trying to retrieve access token', err);
-      oAuth2Client.setCredentials(token);
+      oAuth2Client.setCredentials(token as Credentials);
       // Store the token to disk for later program executions
       fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
         if (err) return console.error(err);
@@ -99,11 +99,12 @@ async function writeToSheets(oAuth2Client: OAuth2Client, data: Payment[]): Promi
   const sheets = google.sheets({version: 'v4', auth: oAuth2Client});
   
   sheets.spreadsheets.values.get({
-    spreadsheetId: process.env.SPREADSHEET_ID,
+    spreadsheetId: config.SPREADSHEET_ID,
     range: 'Sheet1!A2:E',
   }, (err, res) => {
     if (err) return console.log('The API returned an error: ' + err);
-    const rows = res.data.values;
+    if (res == null) return console.log('Nope');
+    const rows = res.data.values as [];
     if (rows.length) {
       console.log('Name, Major:');
       // Print columns A and E, which correspond to indices 0 and 4.
@@ -116,7 +117,7 @@ async function writeToSheets(oAuth2Client: OAuth2Client, data: Payment[]): Promi
   });
   
   sheets.spreadsheets.values.update({
-    spreadsheetId: process.env.SPREADSHEET_ID,
+    spreadsheetId: config.SPREADSHEET_ID,
     range: 'Sheet1!A7:B8',
     valueInputOption: 'RAW',
     requestBody: { 'values': [['mikko', 'pekka'], ['lotta', 'jessi']] }

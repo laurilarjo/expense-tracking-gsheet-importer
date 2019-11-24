@@ -5,8 +5,10 @@
   "author": "Lauri Larjo, based on code by Wilhelm Törnroos",
   "license": "MIT",
   "dependencies": {
+    "@types/lodash": "^4.14.149",
     "dotenv": "^8.2.0",
-    "googleapis": "^39.2.0"
+    "googleapis": "^39.2.0",
+    "lodash": "^4.17.15"
   },
   "devDependencies": {
     "@types/node": "^12.12.12"
