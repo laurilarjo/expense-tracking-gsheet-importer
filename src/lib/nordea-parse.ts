@@ -2,10 +2,10 @@
  * Reads Nordea Finland bank's transaction files in TSV format and 
  * outputs into Google Spreadsheet format.
  */
-import fs = require('fs');
-import readline = require('readline');
-import {parseLine} from './nordea-parse-line';
-import {Payment} from './types';
+import * as fs from 'fs';
+import * as readline from 'readline';
+import { parseLine } from './nordea-parse-line';
+import { Payment } from './types';
 
 
 async function nordeaParse(filePath: string): Promise<Payment[]> {

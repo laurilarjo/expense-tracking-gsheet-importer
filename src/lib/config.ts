@@ -1,5 +1,8 @@
 import { isEmpty, isUndefined } from 'lodash';
-require('dotenv').config();
+import * as dotenv from 'dotenv';
+
+// Load config into process.env
+dotenv.config();
 
 const requiredEnvs = [
     'NORDEA_TRANSACTIONS_FILENAME',

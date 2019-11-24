@@ -1,6 +1,6 @@
-import {Payment} from './types';
+import { Payment } from './types';
 
-export function parseLine(line: string) {
+function parseLine(line: string) {
     if (line === '') {
         return null;
     }
@@ -40,4 +40,6 @@ export function parseLine(line: string) {
 
     return payment;
 }
+
+export {parseLine};
 

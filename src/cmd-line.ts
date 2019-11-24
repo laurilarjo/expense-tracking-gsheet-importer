@@ -1,6 +1,7 @@
-import fs = require('fs');
-const path = require('path');
-const nordeaParse = require('./lib/nordea-parse').nordeaParse;
+import * as fs from 'fs';
+import * as path from 'path';
+
+import { nordeaParse } from './lib/nordea-parse';
 
 if (!process.argv[2]) {
     console.log('File argument missing!')

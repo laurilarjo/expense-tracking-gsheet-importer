@@ -1,12 +1,12 @@
 import fs = require('fs');
 import util = require('util');
 import readline = require('readline');
-import {google, oauth2_v2} from 'googleapis';
+import { google, oauth2_v2 } from 'googleapis';
 import { OAuth2Client } from 'googleapis-common';
 import { Payment } from './lib/types';
 import { Credentials } from 'google-auth-library';
 import config from './lib/config';
-const nordeaParse = require('./lib/nordea-parse').nordeaParse;
+import { nordeaParse } from './lib/nordea-parse';
 
 // If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
