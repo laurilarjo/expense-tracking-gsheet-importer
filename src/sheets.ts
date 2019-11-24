@@ -3,7 +3,7 @@ import util = require('util');
 import readline = require('readline');
 import { google, oauth2_v2 } from 'googleapis';
 import { OAuth2Client } from 'googleapis-common';
-import { Payment } from './lib/types';
+import { Transaction } from './lib/types';
 import { Credentials } from 'google-auth-library';
 import config from './lib/config';
 import { nordeaParse } from './lib/nordea-parse';
@@ -95,7 +95,7 @@ async function getNewToken(oAuth2Client: OAuth2Client): Promise<OAuth2Client | v
  * @see https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
  * @param {google.auth.OAuth2} oAuth2Client The authenticated Google OAuth client.
  */
-async function writeToSheets(oAuth2Client: OAuth2Client, data: Payment[]): Promise<void> {
+async function writeToSheets(oAuth2Client: OAuth2Client, data: Transaction[]): Promise<void> {
   const sheets = google.sheets({version: 'v4', auth: oAuth2Client});
   
   sheets.spreadsheets.values.get({

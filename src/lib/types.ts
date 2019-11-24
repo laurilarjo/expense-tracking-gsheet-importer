@@ -1,5 +1,5 @@
 
-export class Payment {
+export class Transaction {
     month: number;
     year: number;
     date: string;

@@ -4,6 +4,10 @@
   "main": "app.js",
   "author": "Lauri Larjo, based on code by Wilhelm Törnroos",
   "license": "MIT",
+  "scripts": {
+    "dev": "tsc -w",
+    "start": "node built/main.js"
+  },
   "dependencies": {
     "@types/lodash": "^4.14.149",
     "dotenv": "^8.2.0",
