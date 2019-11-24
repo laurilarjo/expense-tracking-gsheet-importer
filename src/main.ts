@@ -26,10 +26,15 @@ const filePath = path.join(process.cwd(), fileName);
 if (process.argv[3] === '--read-only') {
     console.log('Using read-only mode:');
     console.log('');
-    nordeaParse(filePath);
+    readOnly();
 } else if (process.argv[3] === '--import') {
     console.log('Import not implemented');
     console.log('');
 } else {
     console.log('Options are: --read-only or --import');
+}
+
+async function readOnly() {
+    const transactions = await nordeaParse(filePath);
+    console.log(JSON.stringify(transactions));
 }

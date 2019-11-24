@@ -4,71 +4,43 @@
  */
 import * as fs from 'fs';
 import * as readline from 'readline';
+
 import { Transaction } from './types';
 
 
-async function nordeaParse(filePath: string): Promise<Transaction[]> {
-    const lr = readline.createInterface({
-        input: fs.createReadStream(filePath)
-    });
+async function readTransactionsFromFile(filePath: string): Promise<Transaction[]> {
+    return new Promise((resolve, reject) => {
+        
+        let transactions: Transaction[] = [];
+        let rowCounter = 0;
 
-    let rowCounter = 0;
-    let transactions: Transaction[] = [];
-
-    lr.on('line', (line) => {
-        rowCounter++;
-
-        // Row 1 is header with account number, row 2 is empty, row 3 is the header row
-        if (rowCounter === 1 || rowCounter === 3) {
-            return;
-        }
-
-        const transaction = parseLine(line);
-
-        if (transaction) {
-            transactions.push(transaction);
-        }
-    });
-
-    lr.on('close', () => {
-        if (transactions.length === 0) {
-            console.log('No payments parsed!')
-            process.exit(1);
-        }
-
-        const outputName = 'nordea-ynab-' + Date.now() + '.csv';
-
-        const output = fs.createWriteStream(outputName);
-
-        output.on('error', (err) => {
-            console.log(err);
+        let stream = fs.createReadStream(filePath);
+        let rl = readline.createInterface({
+            input: stream
         });
 
-        output.write('Month;Year;Date;Payee;TransactionType;Message;Outflow;Inflow' + '\n')
-        console.log('Month;Year;Date;Payee;TransactionType;Message;Outflow;Inflow')
+        rl.on('line', (line) => {
+            rowCounter++;
+             // Row 1 is header with account number, row 2 is empty, row 3 is the header row
+            if (rowCounter === 1 || rowCounter === 3) {
+                return;
+            }
 
-        transactions.forEach((payment) => {
-            const paymentArr = [
-                payment.month,
-                payment.year,
-                payment.date,
-                payment.payee,
-                payment.transactionType,
-                payment.message,
-                payment.outflow,
-                payment.inflow
-            ];
+            const transaction = parseLine(line);
 
-            output.write(paymentArr.join(';') + '\n');
-            console.log(paymentArr.join(';'));
-        });
+            if (transaction) {
+                transactions.push(transaction);
+            }
+        }).on('close', () => {
+            if (transactions.length === 0) {
+                console.log('No transactions parsed!')
+            }
+            resolve(transactions);
+        }).on('error', err => {
+            reject(err);
+        })
 
-        output.end();
-        console.log(JSON.stringify(transactions));
-        return transactions;
     });
-    return transactions;
-
 }
 
 function parseLine(line: string) {
@@ -110,6 +82,19 @@ function parseLine(line: string) {
     }
 
     return payment;
+}
+
+async function nordeaParse(filePath: string): Promise<Transaction[]> {
+
+    try {
+        const transactions = await readTransactionsFromFile(filePath);
+        //console.log(JSON.stringify(result));
+        return transactions;
+    } catch (e) {
+        console.error(e);
+        throw new Error(e);
+    }
+
 }
 
 export {nordeaParse};
