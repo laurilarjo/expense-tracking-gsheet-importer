@@ -1,11 +1,13 @@
 import * as path from 'path';
 
 import { nordeaParse } from './lib/nordea-parse';
+import { importToSheets, readFromSheets } from './lib/sheets';
+import { Transaction } from './lib/types';
 
 /** 
  * How to run this?
  * 
- * main.js <filename> --read-only
+ * main.js <filename> --read-file
  * Will parse the transaction-file and print results to console. Good for testing.
  * 
  * main.js <filename> --import
@@ -15,26 +17,42 @@ import { nordeaParse } from './lib/nordea-parse';
 
 if (!process.argv[2] || !process.argv[3]) {
     console.log('File argument missing!')
-    console.log('Run like this: npm run start -- <filename> --read-only');
+    console.log('Run like this: npm run start -- <filename> --read-file');
     console.log('Or: npm run start -- <filename> --import');
     process.exit(9);
 }
 
 const fileName = process.argv[2];
 const filePath = path.join(process.cwd(), fileName);
+const runMode = process.argv[3];
 
-if (process.argv[3] === '--read-only') {
-    console.log('Using read-only mode:');
-    console.log('');
-    readOnly();
-} else if (process.argv[3] === '--import') {
-    console.log('Import not implemented');
-    console.log('');
-} else {
-    console.log('Options are: --read-only or --import');
-}
+run(runMode);
 
-async function readOnly() {
-    const transactions = await nordeaParse(filePath);
-    console.log(JSON.stringify(transactions));
+async function run(runMode: string) {
+    switch (runMode) {
+        case '--read-file': {
+            console.log('Using read-file mode:');
+            console.log('');
+            const transactions = await nordeaParse(filePath);
+            console.log(JSON.stringify(transactions));
+            break;
+        }
+        case '--import': {
+            console.log('Importing to sheets:');
+            const transactions = await nordeaParse(filePath);
+            await importToSheets(transactions);
+            console.log('');
+            break;
+        }
+        case '--read-sheets': {
+            console.log('Reading sheets:');
+            const transactions = await readFromSheets();
+            console.log(JSON.stringify(transactions));
+            break;
+        }
+        default: {
+            console.log('Options are: --read-file or --import');
+            break;
+        }
+    }
 }

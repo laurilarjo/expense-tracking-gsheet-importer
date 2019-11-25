@@ -88,7 +88,7 @@ async function nordeaParse(filePath: string): Promise<Transaction[]> {
 
     try {
         const transactions = await readTransactionsFromFile(filePath);
-        //console.log(JSON.stringify(result));
+        console.log(JSON.stringify(transactions));
         return transactions;
     } catch (e) {
         console.error(e);
