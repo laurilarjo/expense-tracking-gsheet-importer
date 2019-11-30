@@ -47,11 +47,11 @@ async function run(runMode: string) {
         case '--read-sheets': {
             console.log('Reading sheets:');
             const transactions = await readFromSheets();
-            console.log(JSON.stringify(transactions));
+            console.log(transactions);
             break;
         }
         default: {
-            console.log('Options are: --read-file or --import');
+            console.log('Options are: --read-file, --read-sheets or --import');
             break;
         }
     }

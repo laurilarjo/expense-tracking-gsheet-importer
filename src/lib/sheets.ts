@@ -1,7 +1,7 @@
 import fs = require('fs');
 import util = require('util');
 import readline = require('readline');
-import {isEmpty} from 'lodash';
+import * as _ from 'lodash';
 import { google, oauth2_v2, sheets_v4 } from 'googleapis';
 import { OAuth2Client } from 'googleapis-common';
 import { Transaction } from './types';
@@ -24,13 +24,26 @@ let readFile = util.promisify(fs.readFile);
 
 async function importToSheets(transactions: Transaction[]): Promise<void> {
   
-  if (isEmpty(transactions)) {
+  if (_.isEmpty(transactions)) {
+    console.log('No transactions to import.');
     return;
   }
 
   try {
     const sheets = await setupSheets();
-    await writeToSheets(sheets, transactions);
+    const originalTransactions = await getDataFromSheets(sheets);
+    console.log('originalTransasctions length: ' + originalTransactions.length);
+    console.log(originalTransactions);
+    console.log('transasctions length: ' + transactions.length);
+    
+    console.log(_.isEqual(transactions[0], originalTransactions[0]));
+    
+    const transactionsToWrite = _.differenceWith(transactions, originalTransactions, _.isEqual);
+
+    console.log('after filtering:');
+    console.log(transactionsToWrite.length);
+    console.log(transactionsToWrite);
+    //await writeToSheets(sheets, transactionsToWrite);
   } catch (err) {
     console.log('Error loading client secret file:', err);
   }
@@ -149,13 +162,6 @@ async function getDataFromSheets(sheets: sheets_v4.Sheets): Promise<Transaction[
       throw new Error('No content from GSheet: ');
     }
     rows = res.data.values as [];
-    if (rows && rows.length) {
-      rows.map((row) => {
-        console.log(`${row[0]}, ${row[1]}, ${row[2]}, ${row[3]}, ${row[4]}`);
-      });
-    } else {
-      console.log('No data found.');
-    }
     return mapRowsToTransaction(rows); 
   } catch(err) {
       throw new Error('The API returned an error: ' + err);
@@ -170,21 +176,22 @@ function mapTransactionsToRows(transactions: Transaction[]) {
   });
 }
 
-function mapRowsToTransaction(rows: any[][]) {
-  let transactions = [] as Transaction[];
-  let result = rows.map(row => {
-    console.log(row);
-    return transactions.push({ 
-      month: row[0],
-      year: row[1],
-      date: row[2],
-      outflow: row[3],
-      inflow: row[4],
-      payee: row[5],
-      transactionType: row[6],
-      message: row[7],
+function mapRowsToTransaction(rows: any[][]): Transaction[] {
+  let transactions: Transaction[] = [];
+  if (rows) {
+    transactions = rows.map(row => {
+      return new Transaction({
+        month: parseInt(row[0]),
+        year: row[1],
+        date: row[2],
+        outflow: parseFloat(row[3]),
+        inflow: parseFloat(row[4]),
+        payee: row[5],
+        transactionType: row[6],
+        message: row[7] || ''
+      });
     });
-  });
+  }
   
   return transactions;
 }

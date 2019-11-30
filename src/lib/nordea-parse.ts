@@ -4,8 +4,9 @@
  */
 import * as fs from 'fs';
 import * as readline from 'readline';
+import * as _ from 'lodash';
 
-import { Transaction } from './types';
+import { Transaction, ITransaction } from './types';
 
 
 async function readTransactionsFromFile(filePath: string): Promise<Transaction[]> {
@@ -65,9 +66,9 @@ function parseLine(line: string) {
     // 12 - Kuitti
 
     const dateParts = lineArr[2].split('.');
-    let payment = new Transaction();
+    let payment = {} as ITransaction;
     payment.month = parseInt(dateParts[1]);
-    payment.year = parseInt(dateParts[2]);
+    payment.year = dateParts[2];
     payment.date = dateParts[0] + '/' + dateParts[1] + '/' + dateParts[2];
     payment.payee = lineArr[4];
     payment.transactionType = lineArr[7];
@@ -81,14 +82,15 @@ function parseLine(line: string) {
         payment.outflow = -1 * amount;
     }
 
-    return payment;
+    return new Transaction(payment);
 }
 
 async function nordeaParse(filePath: string): Promise<Transaction[]> {
 
     try {
         const transactions = await readTransactionsFromFile(filePath);
-        console.log(JSON.stringify(transactions));
+        console.log('Nordea-parse results:');
+        console.log(transactions);
         return transactions;
     } catch (e) {
         console.error(e);
