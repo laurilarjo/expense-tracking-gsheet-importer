@@ -19,28 +19,25 @@ export interface ITransaction {
     month: number; // row[0]
     year: string; // row[1]
     date: string; // row[2]
-    outflow: number; // row[3] - can be '0'
-    inflow: number; // row[4] - can be '0'
-    payee: string; // row[5]
-    transactionType: string; // row[6]
-    message: string; // row[7]  can be ''
+    amount: number; // row[3] - can be '0'
+    payee: string; // row[4]
+    transactionType: string; // row[5]
+    message: string; // row[6]  can be ''
 }
 export class Transaction {
-    month: number; // row[0]
-    year: string; // row[1]
-    date: string; // row[2]
-    outflow: number; // row[3]
-    inflow: number; // row[4]
-    payee: string; // row[5]
-    transactionType: string; // row[6]
-    message: string; // row[7]
+    month: number;
+    year: string;
+    date: string;
+    amount: number;
+    payee: string;
+    transactionType: string;
+    message: string;
 
     constructor(config: {
         month: number,
         year: string,
         date: string,
-        outflow: number,
-        inflow: number,
+        amount: number,
         payee: string,
         transactionType: string,
         message: string,
@@ -48,8 +45,7 @@ export class Transaction {
         this.month = config.month;
         this.year = config.year;
         this.date = config.date;
-        this.outflow = config.outflow || 0;
-        this.inflow = config.inflow || 0;
+        this.amount = config.amount || 0;
         this.payee = config.payee;
         this.transactionType = config.transactionType
         this.message = config.message || '';

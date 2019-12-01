@@ -66,8 +66,8 @@ typings/
 .next
 
 # Data files
-*.csv
-*.txt
+/*.csv
+/*.txt
 
 # Google Sheet credentials
 credentials.json

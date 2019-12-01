@@ -36,6 +36,7 @@ async function run(runMode: string) {
                 console.log('Using read-file mode:');
                 console.log('');
                 const transactions = await parseFile(filePath, context);
+                console.log(`Found ${transactions.length} transactions.`);
                 console.log(transactions);
                 break;
             }
@@ -49,6 +50,7 @@ async function run(runMode: string) {
             case '--read-sheets': {
                 console.log('Reading sheets:');
                 const transactions = await readFromSheets(context);
+                console.log(`Found ${transactions.length} rows.`);
                 console.log(transactions);
                 break;
             }

@@ -5,7 +5,6 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 const requiredEnvs = [
-    'NORDEA_TRANSACTIONS_FILENAME',
     'SPREADSHEET_ID',
     'SHEET_NAME_NORDEA_LAURI',
     'SHEET_NAME_OP_LAURI'
@@ -24,7 +23,6 @@ if (!isEmpty(unsetEnvs)) {
 // cause problems downstream. The unsetEnvs definition above takes
 // care that we don't run with empty values for required envs.
 const config = {
-    NORDEA_TRANSACTIONS_FILENAME: process.env.NORDEA_TRANSACTIONS_FILENAME || '',
     SPREADSHEET_ID: process.env.SPREADSHEET_ID || '',
     LOG: process.env.LOG || 'info',
     SHEET_NAME_NORDEA_LAURI: process.env.SHEET_NAME_NORDEA_LAURI || '',

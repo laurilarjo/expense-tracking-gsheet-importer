@@ -22,6 +22,12 @@ const LAST_COLUMN = 'H'; //last column with useful values in GSheet
 
 let readFile = util.promisify(fs.readFile);
 
+/**
+ * Exported.
+ * 
+ * @param newTransactions Array of transactions to import into GSheets.
+ * @param context Context including user & bank we're dealing with.
+ */
 async function importToSheets(newTransactions: Transaction[], context: Context): Promise<void> {
   
   if (_.isEmpty(newTransactions)) {
@@ -50,6 +56,11 @@ async function importToSheets(newTransactions: Transaction[], context: Context):
   }
 }
 
+/**
+ * Exported.
+ * 
+ * @param context Context including user & bank we're dealing with.
+ */
 async function readFromSheets(context: Context): Promise<Transaction[]> {
   try {
     const sheets = await setupSheets();
@@ -194,7 +205,7 @@ async function appendDataToSheets(sheets: sheets_v4.Sheets, transactions: Transa
 
 function mapTransactionsToRows(transactions: Transaction[]) {
   return transactions.map(x => {
-    return [x.month, x.year, x.date, x.outflow, x.inflow, x.payee, x.transactionType, x.message];
+    return [x.month, x.year, x.date, x.amount, x.payee, x.transactionType, x.message];
   });
 }
 
@@ -206,11 +217,10 @@ function mapRowsToTransaction(rows: any[][]): Transaction[] {
         month: parseInt(row[0]),
         year: row[1],
         date: row[2],
-        outflow: parseFloat(row[3]),
-        inflow: parseFloat(row[4]),
-        payee: row[5],
-        transactionType: row[6],
-        message: row[7] || ''
+        amount: parseFloat(row[3]),
+        payee: row[4],
+        transactionType: row[5],
+        message: row[6] || ''
       });
     });
   }

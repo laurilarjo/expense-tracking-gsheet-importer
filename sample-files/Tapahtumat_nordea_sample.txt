@@ -1,0 +1,10 @@
+Tilinumero	FI4934343
+
+Kirjauspäivä	Arvopäivä	Maksupäivä	Määrä	Saaja/Maksaja	Tilinumero	BIC	Tapahtuma	Viite	Maksajan viite	Viesti	Kortinnumero	Kuitti	
+
+15.08.2019	15.08.2019	15.08.2019	-1446,59	BANK NORWEGIAN CREDIT CARDS	182030-40964	NDEAFIHH	e-lasku	40 061 64					
+
+20.08.2019	20.08.2019	20.08.2019	-10,00	SUOMEN UNICEF RY	152930-87	NDEAFIHH	e-lasku	31004 13071 30607 74					
+
+28.08.2019	28.08.2019	28.08.2019	-5,80	ELISA OYJ / SAUNALAHTI	143930-104078	NDEAFIHHXXX	Itsepalvelu	80 310 953		Lauri numeroparkki 			
+

@@ -2,6 +2,8 @@
 Parse Nordea TSV transaction files and import data to Google Sheets.
 
 ## Usage
+1. Make a copy of this sample sheet to your own account and use it as a base (header rows come from it): [https://docs.google.com/spreadsheets/d/1F78PxLNPdAFrcS8XjPI_hTAyh4knTVqq8kd-8ilmDSA/](https://docs.google.com/spreadsheets/d/1F78PxLNPdAFrcS8XjPI_hTAyh4knTVqq8kd-8ilmDSA/)
+
 1. Go here and click "Enable Google Sheet API" to download the file: [https://developers.google.com/sheets/api/quickstart/nodejs](https://developers.google.com/sheets/api/quickstart/nodejs). Put that `credentials.json` to project root.
 
 1. Run `npm run start -- Tapahtumat_long.txt --read-sheet`.
