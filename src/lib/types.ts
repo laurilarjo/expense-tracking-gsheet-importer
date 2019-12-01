@@ -2,6 +2,8 @@
 export interface Context {
     bank: Bank;
     user: User;
+    filePath: string;
+    runMode: string;
 }
 ;
 export enum Bank {

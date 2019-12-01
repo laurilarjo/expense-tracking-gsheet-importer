@@ -6,13 +6,18 @@
   "license": "MIT",
   "scripts": {
     "dev": "tsc -w",
-    "start": "node built/main.js"
+    "start": "node built/main.js",
+    "read-sheets": "node built/main.js --mode=read-sheets",
+    "read-file": "node built/main.js --mode=read-file",
+    "import": "node built/main.js --mode=import"
   },
   "dependencies": {
     "@types/lodash": "^4.14.149",
+    "@types/yargs": "^13.0.3",
     "dotenv": "^8.2.0",
     "googleapis": "^39.2.0",
-    "lodash": "^4.17.15"
+    "lodash": "^4.17.15",
+    "yargs": "^15.0.2"
   },
   "devDependencies": {
     "@types/node": "^12.12.12"

@@ -1,4 +1,5 @@
 import * as path from 'path';
+import {argv} from 'yargs';
 
 import { nordeaParse } from './lib/nordea-parse';
 import { importToSheets, readFromSheets } from './lib/sheets';
@@ -7,47 +8,85 @@ import { Transaction, Context, Bank, User } from './lib/types';
 /** 
  * How to run this?
  * 
- * main.js <filename> --read-file
- * Will parse the transaction-file and print results to console. Good for testing.
- * 
- * main.js <filename> --import
- * Will parse transaction-file and import results to Google Sheets.
+ * "npm run start" and you get instructions.
  * 
 */
 
-if (!process.argv[2] || !process.argv[3]) {
-    console.log('File argument missing!')
-    console.log('Run like this: npm run start -- <filename> --read-file');
-    console.log('Or: npm run start -- <filename> --import');
-    process.exit(9);
+const RunMode = {
+    ReadSheets: 'read-sheets',
+    ReadFile: 'read-file',
+    Import: 'import'
 }
 
-const fileName = process.argv[2];
-const filePath = path.join(process.cwd(), fileName);
-const runMode = process.argv[3];
-const context = detectBankAndUser(filePath);
+validateArguments();
+const context = detectContext(argv);
+run(context.runMode);
 
-run(runMode);
+function printInstructions() {
+    console.log(`
+Usage example:
+    node built/main.js --mode=read-file --file=./sample-files/Tapahtumat_nordea_sample.txt
+
+Allowed modes are: ${JSON.stringify(Object.values(RunMode))});
+
+With NPM:
+    npm run read-sheets
+    npm run read-file --file=./sample-files/Tapahtumat_nordea_sample.txt
+    npm run import --file=./sample-files/Tapahtumat_nordea_sample.txt
+    `);
+}
+
+function validateArguments(): void {
+    // Check for allowed modes
+    if (!argv.mode || !Object.values(RunMode).includes(argv.mode as string)) {
+        console.log('Correct mode must be provided!');
+        printInstructions()
+        process.exit(1);
+    }
+
+    // Check that file is provided when needed.
+    if ((argv.mode == 'read-file' || argv.mode == 'import') && !argv.file) {
+        console.log('File must be provided!');
+        printInstructions();
+        process.exit(1);
+    }
+}
+
+function detectContext(argv: any): Context {
+    let filePath = '';
+    const runMode = argv.mode as string;
+    if ((runMode == 'read-file' || runMode == 'import')) {
+        filePath = path.join(process.cwd(), argv.file as string);
+    }
+    
+    // TODO: detect from the file
+    return { 
+        bank: Bank.NordeaFI, 
+        user: User.Lauri, 
+        ...{filePath}, 
+        ...{runMode} 
+    } as Context;
+}
 
 async function run(runMode: string) {
     try {
         switch (runMode) {
-            case '--read-file': {
+            case 'read-file': {
                 console.log('Using read-file mode:');
                 console.log('');
-                const transactions = await parseFile(filePath, context);
+                const transactions = await parseFile(context.filePath, context);
                 console.log(`Found ${transactions.length} transactions.`);
                 console.log(transactions);
                 break;
             }
-            case '--import': {
+            case 'import': {
                 console.log('Importing to sheets.');
-                const transactions = await parseFile(filePath, context);
+                const transactions = await parseFile(context.filePath, context);
                 await importToSheets(transactions, context);
                 console.log('');
                 break;
             }
-            case '--read-sheets': {
+            case 'read-sheets': {
                 console.log('Reading sheets:');
                 const transactions = await readFromSheets(context);
                 console.log(`Found ${transactions.length} rows.`);
@@ -55,7 +94,7 @@ async function run(runMode: string) {
                 break;
             }
             default: {
-                console.log('Options are: --read-file, --read-sheets or --import');
+                console.log('Unallowed RunMode chosen!');
                 break;
             }
         }
@@ -63,11 +102,6 @@ async function run(runMode: string) {
         console.log(error);
         process.exit(0);
     }
-}
-
-function detectBankAndUser(filePath: string): Context {
-    // TODO: detect from the file
-    return { bank: Bank.NordeaFI, user: User.Lauri };
 }
 
 async function parseFile(filePath: string, context: Context): Promise<Transaction[]> {
