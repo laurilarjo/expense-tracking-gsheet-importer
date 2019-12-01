@@ -1,4 +1,20 @@
 
+export interface Context {
+    bank: Bank;
+    user: User;
+}
+;
+export enum Bank {
+    NordeaFI,
+    NordeaSWE,
+    OP,
+    Handelsbanken,
+    Norwegian
+}
+export enum User {
+    Lauri,
+    Becky
+}
 export interface ITransaction {
     month: number; // row[0]
     year: string; // row[1]

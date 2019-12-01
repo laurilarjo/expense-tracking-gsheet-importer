@@ -2,13 +2,13 @@ import fs = require('fs');
 import util = require('util');
 import readline = require('readline');
 import * as _ from 'lodash';
-import { google, oauth2_v2, sheets_v4 } from 'googleapis';
+import { google, sheets_v4 } from 'googleapis';
 import { OAuth2Client } from 'googleapis-common';
-import { Transaction } from './types';
+import { Transaction, Context, Bank, User } from './types';
 import { Credentials } from 'google-auth-library';
 import config from './config';
-import { nordeaParse } from './nordea-parse';
-import { start } from 'repl';
+
+
 
 /** SETTINGS FOR SHEETS */
 // If modifying these scopes, delete token.json.
@@ -22,7 +22,7 @@ const LAST_COLUMN = 'H'; //last column with useful values in GSheet
 
 let readFile = util.promisify(fs.readFile);
 
-async function importToSheets(newTransactions: Transaction[]): Promise<void> {
+async function importToSheets(newTransactions: Transaction[], context: Context): Promise<void> {
   
   if (_.isEmpty(newTransactions)) {
     console.log('No transactions to import.');
@@ -31,7 +31,7 @@ async function importToSheets(newTransactions: Transaction[]): Promise<void> {
 
   try {
     const sheets = await setupSheets();
-    const existingTransactions = await getDataFromSheets(sheets);
+    const existingTransactions = await getDataFromSheets(sheets, context);
     console.log('Comparing new data to existing Sheet data...');
     console.log('existingTransasctions length: ' + existingTransactions.length);
     console.log('newTransasctions length: ' + newTransactions.length);
@@ -43,17 +43,17 @@ async function importToSheets(newTransactions: Transaction[]): Promise<void> {
     console.log('Writing...');
     console.log(transactionsToWrite);
     if (transactionsToWrite.length > 0) {
-      await appendDataToSheets(sheets, transactionsToWrite);
+      await appendDataToSheets(sheets, transactionsToWrite, context);
     }
   } catch (err) {
     console.log('Error loading client secret file:', err);
   }
 }
 
-async function readFromSheets(): Promise<Transaction[]> {
+async function readFromSheets(context: Context): Promise<Transaction[]> {
   try {
     const sheets = await setupSheets();
-    return await getDataFromSheets(sheets);
+    return await getDataFromSheets(sheets, context);
   } catch (err) {
     throw new Error('Error loading client secret file: ' + err);
   }
@@ -127,13 +127,13 @@ async function getNewToken(oAuth2Client: OAuth2Client): Promise<OAuth2Client | v
  * @see https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
  * @param {google.auth.OAuth2} oAuth2Client The authenticated Google OAuth client.
  */
-async function updateToSheets(sheets: sheets_v4.Sheets, transactions: Transaction[]): Promise<void> {
+async function updateToSheets(sheets: sheets_v4.Sheets, transactions: Transaction[], context: Context): Promise<void> {
   
-  const rowCount = transactions.length;
+  const sheetName = getSheetName(context);
   const startRow = 1;
   const endRow = startRow + transactions.length;
 
-  const range = `Sheet1!A${startRow}:${LAST_COLUMN}${endRow}`;
+  const range = `${sheetName}!A${startRow}:${LAST_COLUMN}${endRow}`;
   const body = mapTransactionsToRows(transactions);
 
   sheets.spreadsheets.values.update({
@@ -150,14 +150,15 @@ async function updateToSheets(sheets: sheets_v4.Sheets, transactions: Transactio
   
 }
 
-async function getDataFromSheets(sheets: sheets_v4.Sheets): Promise<Transaction[]> {
+async function getDataFromSheets(sheets: sheets_v4.Sheets, context: Context): Promise<Transaction[]> {
 
   let rows = [] as any[][];
+  let sheetName = getSheetName(context);
 
   try {
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: config.SPREADSHEET_ID,
-      range: `Sheet1!A1:${LAST_COLUMN}`,
+      range: `${sheetName}!A2:${LAST_COLUMN}`, // skips header (row1) as we're only interested in transactions
     });
     if (res == null) {
       throw new Error('No content from GSheet: ');
@@ -170,8 +171,8 @@ async function getDataFromSheets(sheets: sheets_v4.Sheets): Promise<Transaction[
  
 }
 
-async function appendDataToSheets(sheets: sheets_v4.Sheets, transactions: Transaction[]): Promise<void> {
-  const range = `Sheet1`;
+async function appendDataToSheets(sheets: sheets_v4.Sheets, transactions: Transaction[], context: Context): Promise<void> {
+  const range = getSheetName(context);
   const body = mapTransactionsToRows(transactions);
 
   try {
@@ -215,6 +216,17 @@ function mapRowsToTransaction(rows: any[][]): Transaction[] {
   }
   
   return transactions;
+}
+
+function getSheetName(context: Context): string {
+  switch (context.bank | context.user) {
+    case Bank.NordeaFI | User.Lauri:
+      return config.SHEET_NAME_NORDEA_LAURI;
+    case Bank.OP | User.Lauri:
+        return config.SHEET_NAME_OP_LAURI;
+    default:
+      throw new Error('No sheet name found for current bank & user combo!');
+  }
 }
 
 export {importToSheets, readFromSheets};

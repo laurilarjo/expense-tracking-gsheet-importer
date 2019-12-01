@@ -6,7 +6,9 @@ dotenv.config();
 
 const requiredEnvs = [
     'NORDEA_TRANSACTIONS_FILENAME',
-    'SPREADSHEET_ID'
+    'SPREADSHEET_ID',
+    'SHEET_NAME_NORDEA_LAURI',
+    'SHEET_NAME_OP_LAURI'
 ];
 
 const unsetEnvs = requiredEnvs.filter((env) => isUndefined(process.env[env]));
@@ -25,6 +27,8 @@ const config = {
     NORDEA_TRANSACTIONS_FILENAME: process.env.NORDEA_TRANSACTIONS_FILENAME || '',
     SPREADSHEET_ID: process.env.SPREADSHEET_ID || '',
     LOG: process.env.LOG || 'info',
+    SHEET_NAME_NORDEA_LAURI: process.env.SHEET_NAME_NORDEA_LAURI || '',
+    SHEET_NAME_OP_LAURI: process.env.SHEET_NAME_OP_LAURI || '',
   };
   
   export default config;

@@ -2,7 +2,7 @@ import * as path from 'path';
 
 import { nordeaParse } from './lib/nordea-parse';
 import { importToSheets, readFromSheets } from './lib/sheets';
-import { Transaction } from './lib/types';
+import { Transaction, Context, Bank, User } from './lib/types';
 
 /** 
  * How to run this?
@@ -25,6 +25,7 @@ if (!process.argv[2] || !process.argv[3]) {
 const fileName = process.argv[2];
 const filePath = path.join(process.cwd(), fileName);
 const runMode = process.argv[3];
+const context = detectBankAndUser(filePath);
 
 run(runMode);
 
@@ -34,20 +35,20 @@ async function run(runMode: string) {
             case '--read-file': {
                 console.log('Using read-file mode:');
                 console.log('');
-                const transactions = await nordeaParse(filePath);
-                console.log(JSON.stringify(transactions));
+                const transactions = await parseFile(filePath, context);
+                console.log(transactions);
                 break;
             }
             case '--import': {
                 console.log('Importing to sheets.');
-                const transactions = await nordeaParse(filePath);
-                await importToSheets(transactions);
+                const transactions = await parseFile(filePath, context);
+                await importToSheets(transactions, context);
                 console.log('');
                 break;
             }
             case '--read-sheets': {
                 console.log('Reading sheets:');
-                const transactions = await readFromSheets();
+                const transactions = await readFromSheets(context);
                 console.log(transactions);
                 break;
             }
@@ -61,3 +62,19 @@ async function run(runMode: string) {
         process.exit(0);
     }
 }
+
+function detectBankAndUser(filePath: string): Context {
+    // TODO: detect from the file
+    return { bank: Bank.NordeaFI, user: User.Lauri };
+}
+
+async function parseFile(filePath: string, context: Context): Promise<Transaction[]> {
+    if (context.bank == Bank.NordeaFI) {
+        console.log('using NordeaParse');
+        return await nordeaParse(filePath);
+    } else {
+        console.log('using defaultParse');
+        return await nordeaParse(filePath);
+    }
+}
+
