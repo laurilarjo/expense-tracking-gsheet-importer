@@ -18,32 +18,33 @@ const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 // time.
 const TOKEN_PATH = 'token.json';
 const CREDENTIALS_FILE = 'credentials.json';
-const LAST_COLUMN = 'H';
+const LAST_COLUMN = 'H'; //last column with useful values in GSheet 
 
 let readFile = util.promisify(fs.readFile);
 
-async function importToSheets(transactions: Transaction[]): Promise<void> {
+async function importToSheets(newTransactions: Transaction[]): Promise<void> {
   
-  if (_.isEmpty(transactions)) {
+  if (_.isEmpty(newTransactions)) {
     console.log('No transactions to import.');
     return;
   }
 
   try {
     const sheets = await setupSheets();
-    const originalTransactions = await getDataFromSheets(sheets);
-    console.log('originalTransasctions length: ' + originalTransactions.length);
-    console.log(originalTransactions);
-    console.log('transasctions length: ' + transactions.length);
+    const existingTransactions = await getDataFromSheets(sheets);
+    console.log('Comparing new data to existing Sheet data...');
+    console.log('existingTransasctions length: ' + existingTransactions.length);
+    console.log('newTransasctions length: ' + newTransactions.length);
     
-    console.log(_.isEqual(transactions[0], originalTransactions[0]));
-    
-    const transactionsToWrite = _.differenceWith(transactions, originalTransactions, _.isEqual);
+    const transactionsToWrite = _.differenceWith(newTransactions, existingTransactions, _.isEqual);
 
-    console.log('after filtering:');
+    console.log('After comparison, going to write:');
     console.log(transactionsToWrite.length);
+    console.log('Writing...');
     console.log(transactionsToWrite);
-    //await writeToSheets(sheets, transactionsToWrite);
+    if (transactionsToWrite.length > 0) {
+      await appendDataToSheets(sheets, transactionsToWrite);
+    }
   } catch (err) {
     console.log('Error loading client secret file:', err);
   }
@@ -126,7 +127,7 @@ async function getNewToken(oAuth2Client: OAuth2Client): Promise<OAuth2Client | v
  * @see https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
  * @param {google.auth.OAuth2} oAuth2Client The authenticated Google OAuth client.
  */
-async function writeToSheets(sheets: sheets_v4.Sheets, transactions: Transaction[]): Promise<void> {
+async function updateToSheets(sheets: sheets_v4.Sheets, transactions: Transaction[]): Promise<void> {
   
   const rowCount = transactions.length;
   const startRow = 1;
@@ -167,7 +168,27 @@ async function getDataFromSheets(sheets: sheets_v4.Sheets): Promise<Transaction[
       throw new Error('The API returned an error: ' + err);
   }
  
-  
+}
+
+async function appendDataToSheets(sheets: sheets_v4.Sheets, transactions: Transaction[]): Promise<void> {
+  const range = `Sheet1`;
+  const body = mapTransactionsToRows(transactions);
+
+  try {
+    const result = await sheets.spreadsheets.values.append({
+      spreadsheetId: config.SPREADSHEET_ID,
+      range: range,
+      valueInputOption: 'RAW',
+      requestBody: { 'values': body }
+    });
+
+    if (result == null) {
+      throw new Error('No content from GSheet: ');
+    }
+    console.log('Data imported!');
+  } catch (error) {
+      throw new Error('The API returned an error: ' + error);
+  }
 }
 
 function mapTransactionsToRows(transactions: Transaction[]) {

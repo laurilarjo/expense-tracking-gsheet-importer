@@ -29,30 +29,35 @@ const runMode = process.argv[3];
 run(runMode);
 
 async function run(runMode: string) {
-    switch (runMode) {
-        case '--read-file': {
-            console.log('Using read-file mode:');
-            console.log('');
-            const transactions = await nordeaParse(filePath);
-            console.log(JSON.stringify(transactions));
-            break;
+    try {
+        switch (runMode) {
+            case '--read-file': {
+                console.log('Using read-file mode:');
+                console.log('');
+                const transactions = await nordeaParse(filePath);
+                console.log(JSON.stringify(transactions));
+                break;
+            }
+            case '--import': {
+                console.log('Importing to sheets.');
+                const transactions = await nordeaParse(filePath);
+                await importToSheets(transactions);
+                console.log('');
+                break;
+            }
+            case '--read-sheets': {
+                console.log('Reading sheets:');
+                const transactions = await readFromSheets();
+                console.log(transactions);
+                break;
+            }
+            default: {
+                console.log('Options are: --read-file, --read-sheets or --import');
+                break;
+            }
         }
-        case '--import': {
-            console.log('Importing to sheets:');
-            const transactions = await nordeaParse(filePath);
-            await importToSheets(transactions);
-            console.log('');
-            break;
-        }
-        case '--read-sheets': {
-            console.log('Reading sheets:');
-            const transactions = await readFromSheets();
-            console.log(transactions);
-            break;
-        }
-        default: {
-            console.log('Options are: --read-file, --read-sheets or --import');
-            break;
-        }
+    } catch (error) {
+        console.log(error);
+        process.exit(0);
     }
 }

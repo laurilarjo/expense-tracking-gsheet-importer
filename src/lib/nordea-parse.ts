@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as readline from 'readline';
 import * as _ from 'lodash';
 
+import config from './config';
 import { Transaction, ITransaction } from './types';
 
 
@@ -89,8 +90,10 @@ async function nordeaParse(filePath: string): Promise<Transaction[]> {
 
     try {
         const transactions = await readTransactionsFromFile(filePath);
-        console.log('Nordea-parse results:');
-        console.log(transactions);
+        if (config.LOG == 'debug') {
+            console.log('Nordea-parse results:');
+            console.log(transactions);
+        }
         return transactions;
     } catch (e) {
         console.error(e);

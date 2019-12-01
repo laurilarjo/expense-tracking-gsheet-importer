@@ -24,6 +24,7 @@ if (!isEmpty(unsetEnvs)) {
 const config = {
     NORDEA_TRANSACTIONS_FILENAME: process.env.NORDEA_TRANSACTIONS_FILENAME || '',
     SPREADSHEET_ID: process.env.SPREADSHEET_ID || '',
+    LOG: process.env.LOG || 'info',
   };
   
   export default config;
