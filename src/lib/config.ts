@@ -7,7 +7,9 @@ dotenv.config();
 const requiredEnvs = [
     'SPREADSHEET_ID',
     'SHEET_NAME_NORDEA_LAURI',
-    'SHEET_NAME_OP_LAURI'
+    'SHEET_NAME_OP_LAURI',
+    'FILE_DETECTION_NORDEA_LAURI',
+    'FILE_DETECTION_OP_LAURI'
 ];
 
 const unsetEnvs = requiredEnvs.filter((env) => isUndefined(process.env[env]));
@@ -27,6 +29,8 @@ const config = {
     LOG: process.env.LOG || 'info',
     SHEET_NAME_NORDEA_LAURI: process.env.SHEET_NAME_NORDEA_LAURI || '',
     SHEET_NAME_OP_LAURI: process.env.SHEET_NAME_OP_LAURI || '',
+    FILE_DETECTION_NORDEA_LAURI: process.env.FILE_DETECTION_NORDEA_LAURI || '',
+    FILE_DETECTION_OP_LAURI: process.env.FILE_DETECTION_OP_LAURI || ''
   };
   
   export default config;

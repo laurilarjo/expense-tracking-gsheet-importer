@@ -2,6 +2,7 @@ import * as path from 'path';
 import {argv} from 'yargs';
 
 import { nordeaParse } from './lib/nordea-parse';
+import {detectBankAndUserFromFile} from './detect-bank';
 import { importToSheets, readFromSheets } from './lib/sheets';
 import { Transaction, Context, Bank, User } from './lib/types';
 
@@ -19,8 +20,7 @@ const RunMode = {
 }
 
 validateArguments();
-const context = detectContext(argv);
-run(context.runMode);
+run();
 
 function printInstructions() {
     console.log(`
@@ -52,25 +52,28 @@ function validateArguments(): void {
     }
 }
 
-function detectContext(argv: any): Context {
+async function detectContext(argv: any): Promise<Context> {
     let filePath = '';
     const runMode = argv.mode as string;
     if ((runMode == 'read-file' || runMode == 'import')) {
         filePath = path.join(process.cwd(), argv.file as string);
     }
-    
-    // TODO: detect from the file
-    return { 
-        bank: Bank.NordeaFI, 
-        user: User.Lauri, 
+    let context = {
         ...{filePath}, 
         ...{runMode} 
-    } as Context;
+    } as Context
+
+    context = await detectBankAndUserFromFile(filePath, context);
+    console.log('context detected as: ' + context.bank);
+    
+    return context;
 }
 
-async function run(runMode: string) {
+async function run() {
+    const context = await detectContext(argv);
+
     try {
-        switch (runMode) {
+        switch (context.runMode) {
             case 'read-file': {
                 console.log('Using read-file mode:');
                 console.log('');
@@ -107,6 +110,9 @@ async function run(runMode: string) {
 async function parseFile(filePath: string, context: Context): Promise<Transaction[]> {
     if (context.bank == Bank.NordeaFI) {
         console.log('using NordeaParse');
+        return await nordeaParse(filePath);
+    } else if (context.bank == Bank.OP) {
+        console.log('using OpParse');
         return await nordeaParse(filePath);
     } else {
         console.log('using defaultParse');

@@ -197,7 +197,7 @@ async function appendDataToSheets(sheets: sheets_v4.Sheets, transactions: Transa
     if (result == null) {
       throw new Error('No content from GSheet: ');
     }
-    console.log('Data imported!');
+    console.log(`Data imported! ${transactions.length} rows written`);
   } catch (error) {
       throw new Error('The API returned an error: ' + error);
   }
