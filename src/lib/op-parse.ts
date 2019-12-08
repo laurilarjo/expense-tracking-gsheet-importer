@@ -1,5 +1,5 @@
 /**
- * Reads Nordea Finland bank's transaction files in TSV format
+ * Reads OP Finland bank's transaction files in CSV format
  */
 import * as fs from 'fs';
 import * as readline from 'readline';
@@ -21,8 +21,8 @@ async function readTransactionsFromFile(filePath: string): Promise<Transaction[]
 
         rl.on('line', (line) => {
             rowCounter++;
-             // Row 1 is header with account number, row 2 is empty, row 3 is the header row
-            if (rowCounter === 1 || rowCounter === 3) {
+             // Row 1 is header row
+            if (rowCounter === 1) {
                 return;
             }
 
@@ -48,41 +48,42 @@ function parseLine(line: string) {
         return null;
     }
 
-    const lineArr = line.split('\t');
+    const lineArr = line.split(';');
+    
+    // Header row
+    // 15.01.2019;15.01.2019;-5,65;"103";PALVELUMAKSU;"OSUUSPANKKI";;"0001234567";TILIASIOINNIN PALVELUMAKSUT AJALTA 1.11-30.11.2018   ;20190115/5 AL  /001031
 
     // 0 - Kirjauspäivä
     // 1 - Arvopäivä
-    // 2 - Maksupäivä
-    // 3 - Määrä
-    // 4 - Saaja/Maksaja
-    // 5 - Tilinumero
-    // 6 - BIC
-    // 7 - Tapahtuma
-    // 8 - Viite
-    // 9 - Maksajan viite
-    // 10 - Viesti
-    // 11 - Kortinnumero
-    // 12 - Kuitti
+    // 2 - Määrä
+    // 3 - Laji
+    // 4 - Selitys
+    // 5 - Saaja/Maksaja
+    // 6 - Saajan tilinro
+    // 7 - Viite
+    // 8 - Viesti
+    // 9 - Arkistointitunnus
+    
 
-    let payment = {} as Transaction;    
-    const dateParts = lineArr[2].split('.');
+    let payment = {} as Transaction;
+    const dateParts = lineArr[1].split('.');
     payment.month = parseInt(dateParts[1]);
     payment.year = dateParts[2];
     payment.date = dateParts[0] + '/' + dateParts[1] + '/' + dateParts[2];
-    payment.payee = lineArr[4];
-    payment.transactionType = lineArr[7];
-    payment.message = lineArr[10];
-    payment.amount = parseFloat(lineArr[3].replace(',', '.'));
+    payment.transactionType = lineArr[4];
+    payment.payee = lineArr[5].replace(/"/g, '');
+    payment.message = lineArr[8];
+    payment.amount = parseFloat(lineArr[2].replace(',', '.'));
 
     return new Transaction(payment);
 }
 
-async function nordeaParse(filePath: string): Promise<Transaction[]> {
+async function opParse(filePath: string): Promise<Transaction[]> {
 
     try {
         const transactions = await readTransactionsFromFile(filePath);
         if (config.LOG == 'debug') {
-            console.log('Nordea-parse results:');
+            console.log('OP-parse results:');
             console.log(transactions);
         }
         return transactions;
@@ -93,4 +94,4 @@ async function nordeaParse(filePath: string): Promise<Transaction[]> {
 
 }
 
-export {nordeaParse};
+export {opParse};
