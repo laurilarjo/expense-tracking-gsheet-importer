@@ -30,7 +30,7 @@ async function detectBankAndUserFromFile(filePath: string, context: Context): Pr
                 found = true;
             } else if (_.includes(line, config.FILE_DETECTION_OP_LAURI)) {
                 context.user = User.Lauri;
-                context.bank = Bank.OP;    
+                context.bank = Bank.OP;
                 found = true;
             }
 

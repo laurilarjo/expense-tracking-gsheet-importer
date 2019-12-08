@@ -2,7 +2,8 @@ import * as path from 'path';
 import {argv} from 'yargs';
 
 import { nordeaParse } from './lib/nordea-parse';
-import {detectBankAndUserFromFile} from './detect-bank';
+import { opParse } from './lib/op-parse';
+import { detectBankAndUserFromFile } from './detect-bank';
 import { importToSheets, readFromSheets } from './lib/sheets';
 import { Transaction, Context, Bank, User } from './lib/types';
 
@@ -55,27 +56,36 @@ function validateArguments(): void {
 async function detectContext(argv: any): Promise<Context> {
     let filePath = '';
     const runMode = argv.mode as string;
-    if ((runMode == 'read-file' || runMode == 'import')) {
-        filePath = path.join(process.cwd(), argv.file as string);
+
+    // TODO: now using a default bank & user, but this should be able to set
+    if (runMode == 'read-sheets') {
+        return { 
+            runMode: 'read-sheets',
+            bank: Bank.OP,
+            user: User.Lauri
+        } as Context;
     }
+    
+    filePath = path.join(process.cwd(), argv.file as string);
+    
     let context = {
         ...{filePath}, 
         ...{runMode} 
     } as Context
 
     context = await detectBankAndUserFromFile(filePath, context);
-    console.log('context detected as: ' + context.bank);
-    
     return context;
 }
 
 async function run() {
     const context = await detectContext(argv);
+    console.log('Bank detected as: ' + Bank[context.bank]);
+    console.log('User detected as: ' + User[context.user]);
 
     try {
         switch (context.runMode) {
             case 'read-file': {
-                console.log('Using read-file mode:');
+                console.log('Using read-file mode...');
                 console.log('');
                 const transactions = await parseFile(context.filePath, context);
                 console.log(`Found ${transactions.length} transactions.`);
@@ -83,14 +93,14 @@ async function run() {
                 break;
             }
             case 'import': {
-                console.log('Importing to sheets.');
+                console.log('Importing to sheets...');
                 const transactions = await parseFile(context.filePath, context);
                 await importToSheets(transactions, context);
                 console.log('');
                 break;
             }
             case 'read-sheets': {
-                console.log('Reading sheets:');
+                console.log('Reading sheets...');
                 const transactions = await readFromSheets(context);
                 console.log(`Found ${transactions.length} rows.`);
                 console.log(transactions);
@@ -113,7 +123,7 @@ async function parseFile(filePath: string, context: Context): Promise<Transactio
         return await nordeaParse(filePath);
     } else if (context.bank == Bank.OP) {
         console.log('using OpParse');
-        return await nordeaParse(filePath);
+        return await opParse(filePath);
     } else {
         console.log('using defaultParse');
         return await nordeaParse(filePath);

@@ -52,7 +52,7 @@ async function importToSheets(newTransactions: Transaction[], context: Context):
       await appendDataToSheets(sheets, transactionsToWrite, context);
     }
   } catch (err) {
-    console.log('Error loading client secret file:', err);
+    console.log('Error importing to Sheets:', err);
   }
 }
 
@@ -66,7 +66,7 @@ async function readFromSheets(context: Context): Promise<Transaction[]> {
     const sheets = await setupSheets();
     return await getDataFromSheets(sheets, context);
   } catch (err) {
-    throw new Error('Error loading client secret file: ' + err);
+    throw new Error('Error reading from Sheets: ' + err);
   }
 }
 
@@ -165,6 +165,7 @@ async function getDataFromSheets(sheets: sheets_v4.Sheets, context: Context): Pr
 
   let rows = [] as any[][];
   let sheetName = getSheetName(context);
+  console.log(`Reading sheet: ${sheetName}`);
 
   try {
     const res = await sheets.spreadsheets.values.get({
@@ -184,6 +185,7 @@ async function getDataFromSheets(sheets: sheets_v4.Sheets, context: Context): Pr
 
 async function appendDataToSheets(sheets: sheets_v4.Sheets, transactions: Transaction[], context: Context): Promise<void> {
   const range = getSheetName(context);
+  console.log(`Appending to sheet: ${range}`);
   const body = mapTransactionsToRows(transactions);
 
   try {
@@ -229,11 +231,14 @@ function mapRowsToTransaction(rows: any[][]): Transaction[] {
 }
 
 function getSheetName(context: Context): string {
+  if (context.bank === undefined || context.user === undefined) {
+    throw new Error('Bank or User not set in Context');
+  }
   switch (context.bank | context.user) {
     case Bank.NordeaFI | User.Lauri:
       return config.SHEET_NAME_NORDEA_LAURI;
     case Bank.OP | User.Lauri:
-        return config.SHEET_NAME_OP_LAURI;
+      return config.SHEET_NAME_OP_LAURI;
     default:
       throw new Error('No sheet name found for current bank & user combo!');
   }
