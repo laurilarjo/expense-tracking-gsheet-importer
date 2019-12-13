@@ -14,7 +14,7 @@ async function readTransactionsFromFile(filePath: string): Promise<Transaction[]
         let transactions: Transaction[] = [];
         let rowCounter = 0;
 
-        let stream = fs.createReadStream(filePath);
+        let stream = fs.createReadStream(filePath, {encoding: 'latin1'});
         let rl = readline.createInterface({
             input: stream
         });
