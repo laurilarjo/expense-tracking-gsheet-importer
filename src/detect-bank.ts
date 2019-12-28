@@ -10,9 +10,20 @@ import config from './lib/config';
 import { Context, User, Bank } from './lib/types';
 
 async function detectBankAndUserFromFile(filePath: string, context: Context): Promise<Context> {
+    if (filePath.endsWith('xlsx')) {
+        // TODO: we can't detect user from here.
+        context.user = User.Lauri;
+        context.bank = Bank.Norwegian;
+        return context;
+    }
+    if (filePath.endsWith('xls')) {
+        // TODO: we can't detect user from here.
+        context.user = User.Lauri;
+        context.bank = Bank.Handelsbanken;
+        return context;
+    }
     return new Promise((resolve, reject) => {
         
-        let rowCounter = 0;
         let found = false;
 
         let stream = fs.createReadStream(filePath);
@@ -21,14 +32,13 @@ async function detectBankAndUserFromFile(filePath: string, context: Context): Pr
         });
 
         rl.on('line', (line) => {
-            rowCounter++;
-
             
             if (_.includes(line, config.FILE_DETECTION_NORDEA_LAURI)) {
                 context.user = User.Lauri;
                 context.bank = Bank.NordeaFI;
                 found = true;
             } else if (_.includes(line, config.FILE_DETECTION_OP_LAURI)) {
+                // TODO: we actually can't detect user from this
                 context.user = User.Lauri;
                 context.bank = Bank.OP;
                 found = true;

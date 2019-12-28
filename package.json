@@ -17,6 +17,7 @@
     "dotenv": "^8.2.0",
     "googleapis": "^39.2.0",
     "lodash": "^4.17.15",
+    "xlsx": "^0.15.3",
     "yargs": "^15.0.2"
   },
   "devDependencies": {

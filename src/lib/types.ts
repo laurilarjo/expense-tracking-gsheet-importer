@@ -29,7 +29,7 @@ export interface ITransaction {
 export class Transaction {
     month: number;
     year: string;
-    date: string;
+    date: string; // format is DD/MM/YYYY
     amount: number;
     payee: string;
     transactionType: string;
