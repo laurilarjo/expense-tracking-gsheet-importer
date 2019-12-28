@@ -6,6 +6,7 @@ import { opParse } from './lib/op-parse';
 import { detectBankAndUserFromFile } from './detect-bank';
 import { importToSheets, readFromSheets } from './lib/sheets';
 import { Transaction, Context, Bank, User } from './lib/types';
+import { norwegianParse } from './lib/norwegian-parse';
 
 /** 
  * How to run this?
@@ -124,6 +125,9 @@ async function parseFile(filePath: string, context: Context): Promise<Transactio
     } else if (context.bank == Bank.OP) {
         console.log('using OpParse');
         return await opParse(filePath);
+    } else if (context.bank == Bank.Norwegian) {
+        console.log('using NorwegianParse');
+        return await norwegianParse(filePath);
     } else {
         console.log('using defaultParse');
         return await nordeaParse(filePath);

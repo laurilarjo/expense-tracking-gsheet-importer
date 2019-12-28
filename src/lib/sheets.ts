@@ -239,6 +239,8 @@ function getSheetName(context: Context): string {
       return config.SHEET_NAME_NORDEA_LAURI;
     case Bank.OP | User.Lauri:
       return config.SHEET_NAME_OP_LAURI;
+    case Bank.Norwegian | User.Lauri:
+        return config.SHEET_NAME_NORWEGIAN_LAURI;
     default:
       throw new Error('No sheet name found for current bank & user combo!');
   }

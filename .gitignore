@@ -68,6 +68,8 @@ typings/
 # Data files
 /*.csv
 /*.txt
+/*.xlsx
+/*.xls
 
 # Google Sheet credentials
 credentials.json
