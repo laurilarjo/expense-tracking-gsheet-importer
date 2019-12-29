@@ -32,7 +32,7 @@ const config = {
     SHEET_NAME_OP_LAURI: process.env.SHEET_NAME_OP_LAURI || '',
     SHEET_NAME_NORWEGIAN_LAURI: process.env.SHEET_NAME_NORWEGIAN_LAURI || '',
     FILE_DETECTION_NORDEA_LAURI: process.env.FILE_DETECTION_NORDEA_LAURI || '',
-    FILE_DETECTION_OP_LAURI: process.env.FILE_DETECTION_OP_LAURI || ''
+    FILE_DETECTION_OP_LAURI: process.env.FILE_DETECTION_OP_LAURI || '',
   };
   
   export default config;
