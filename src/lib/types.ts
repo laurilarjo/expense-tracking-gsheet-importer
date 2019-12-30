@@ -19,40 +19,35 @@ export enum User {
     Lauri,
     Becky
 }
-export interface ITransaction {
-    month: number; // row[0]
-    year: string; // row[1]
-    date: string; // row[2]
-    amount: number; // row[3] - can be '0'
-    payee: string; // row[4]
-    transactionType: string; // row[5]
-    message: string; // row[6]  can be ''
-}
+
 export class Transaction {
     month: number;
     year: string;
     date: string; // format is DD/MM/YYYY
     amount: number;
+    amountEur: number;
     payee: string;
     transactionType: string;
     message: string;
 
-    constructor(config: {
+    constructor(props: {
         month: number,
         year: string,
         date: string,
         amount: number,
+        amountEur: number;
         payee: string,
         transactionType: string,
         message: string,
     }) {
-        this.month = config.month;
-        this.year = config.year;
-        this.date = config.date;
-        this.amount = config.amount || 0;
-        this.payee = config.payee;
-        this.transactionType = config.transactionType
-        this.message = config.message || '';
+        this.month = props.month;
+        this.year = props.year;
+        this.date = props.date;
+        this.amount = props.amount || 0;
+        this.amountEur = props.amountEur || 0;
+        this.payee = props.payee;
+        this.transactionType = props.transactionType
+        this.message = props.message || '';
     };
     
 }

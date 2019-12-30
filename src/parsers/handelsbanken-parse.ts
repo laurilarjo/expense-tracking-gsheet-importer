@@ -16,8 +16,9 @@ async function readTransactionsFromFile(filePath: string): Promise<Transaction[]
     console.log(filePath);
 
 
+    // TODO: This library uses old xlm2json, which has dependencies to deprecated packages. Should change.
     const exchangeRate = await getRates({currency: 'SEK'});
-    console.log('rate: ' + exchangeRate);
+    console.log('Rate for SEK: ' + exchangeRate);
 
     /*
     This exchangeRate library is not well done as NPM package, but is otherwise promising. 
@@ -46,8 +47,7 @@ async function readTransactionsFromFile(filePath: string): Promise<Transaction[]
     xlsTransactionArray.forEach((line: any) => {
         const transaction = parseLine(line);
         if (transaction) {
-            // TODO: Change this after adding the SEK & EUR columns
-            transaction.amount = Math.round((transaction.amount / exchangeRate) * 100) / 100;
+            transaction.amountEur = Math.round((transaction.amount / exchangeRate) * 100) / 100;
             transactions.push(transaction);
         }
     });
@@ -84,6 +84,7 @@ function parseLine(line: any): Transaction | null {
     } else {
         payment.amount = line['Belopp'] / 100;
     }
+    payment.amount = Math.round(payment.amount * 100) / 100;
 
     return new Transaction(payment);
 }
