@@ -78,7 +78,7 @@ function parseLine(line: string) {
     return new Transaction(payment);
 }
 
-async function nordeaParse(filePath: string): Promise<Transaction[]> {
+async function nordeaFiParse(filePath: string): Promise<Transaction[]> {
 
     try {
         const transactions = await readTransactionsFromFile(filePath);
@@ -94,4 +94,4 @@ async function nordeaParse(filePath: string): Promise<Transaction[]> {
 
 }
 
-export {nordeaParse};
+export {nordeaFiParse};

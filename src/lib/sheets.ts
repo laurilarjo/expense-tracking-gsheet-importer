@@ -43,6 +43,7 @@ async function importToSheets(newTransactions: Transaction[], context: Context):
     console.log('existingTransasctions length: ' + existingTransactions.length);
     console.log('newTransasctions length: ' + newTransactions.length);
     
+    // TODO: Now with currency conversions added, the results won't match if exchange rate has changed. Fix this.
     const transactionsToWrite = _.differenceWith(newTransactions, existingTransactions, _.isEqual);
 
     console.log('After comparison, going to write:');

@@ -10,10 +10,20 @@ import config from './lib/config';
 import { Context, User, Bank } from './lib/types';
 import { norwegianParse } from './parsers/norwegian-parse';
 import { opParse } from './parsers/op-parse';
-import { nordeaParse } from './parsers/nordea-parse';
+import { nordeaFiParse } from './parsers/nordea-fi-parse';
+import { nordeaSeParse } from './parsers/nordea-se-parse';
 import { handelsbankenParse } from './parsers/handelsbanken-parse';
 
 async function detectBankAndUserFromFile(filePath: string, context: Context): Promise<Context> {
+    // TODO: This is just hard coded for now
+    if (filePath.includes('nordea-sweden')) {
+        context.user = User.Becky;
+        context.bank = Bank.NordeaSWE;
+        context.parser = nordeaSeParse;
+        context.sheetName = config.SHEET_NAME_NORDEASE_BECKY;
+        return context;
+    }
+
     if (filePath.endsWith('xlsx')) {
         // TODO: we can't detect user from here.
         context.user = User.Lauri;
@@ -30,6 +40,8 @@ async function detectBankAndUserFromFile(filePath: string, context: Context): Pr
         context.sheetName = config.SHEET_NAME_HANDELSBANKEN_LAURI;
         return context;
     }
+    
+
     return new Promise((resolve, reject) => {
         
         let found = false;
@@ -44,7 +56,7 @@ async function detectBankAndUserFromFile(filePath: string, context: Context): Pr
             if (_.includes(line, config.FILE_DETECTION_NORDEA_LAURI)) {
                 context.user = User.Lauri;
                 context.bank = Bank.NordeaFI;
-                context.parser = nordeaParse;
+                context.parser = nordeaFiParse;
                 context.sheetName = config.SHEET_NAME_NORDEA_LAURI;
                 found = true;
             } else if (_.includes(line, config.FILE_DETECTION_OP_LAURI)) {

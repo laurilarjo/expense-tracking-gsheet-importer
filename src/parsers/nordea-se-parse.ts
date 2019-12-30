@@ -3,7 +3,6 @@
  */
 import * as xlsx from 'xlsx';
 import * as moment from 'moment';
-import { JSDOM } from 'jsdom';
 
 import config from '../lib/config';
 import { convertSEKToEur } from '../lib/utils';
@@ -14,11 +13,9 @@ async function readTransactionsFromFile(filePath: string): Promise<Transaction[]
     
     console.log(filePath);
     
-    const dom = await JSDOM.fromFile(filePath);
-    // The file is actually HTML with 4 tables. Interesting data is on the last.
-    const sheet = xlsx.utils.table_to_sheet(dom.window.document.querySelectorAll("table")[3]);
+    const workbook = xlsx.readFile(filePath);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const xlsTransactionArray = xlsx.utils.sheet_to_json(sheet);
-
     const transactions: Transaction[] = [];
 
     for (const line of xlsTransactionArray) {
@@ -42,36 +39,29 @@ function parseLine(line: any): Transaction | null {
         return null;
     }
 
-    // Transaktionsdatum - date
-    // Text - payee
+    // Datum - date
+    // Transaktion - payee
     // Belopp - amount
 
-    let payment = {} as Transaction;    
-    const date = xlsx.SSF.parse_date_code(line['Transaktionsdatum']);
-    payment.month = date.m;
-    payment.year = `${date.y}`;
-    payment.date = `${date.d}/${date.m}/${date.y}`;
-    payment.payee = `${line['Text']}`;
+    let payment = {} as Transaction;
+    const date = moment(line['Datum'], 'YYYY-MM-DD');
+    payment.month = date.month();
+    payment.year = `${date.year()}`;
+    payment.date = `${date.day()}/${date.month()}/${date.year()}`;
+    payment.payee = `${line['Transaktion']}`;
     payment.transactionType = '';
     payment.message = '';
-
-    // Voi vittu sentään Handelsbanken
-    if (typeof(line['Belopp']) === 'string') {
-        payment.amount = parseFloat(line['Belopp'].replace(' ', '').replace(',', '.'));
-    } else {
-        payment.amount = line['Belopp'] / 100;
-    }
-    payment.amount = Math.round(payment.amount * 100) / 100;
+    payment.amount = parseFloat(line['Belopp'].replace('.', '').replace(',', '.'));
 
     return new Transaction(payment);
 }
 
-async function handelsbankenParse(filePath: string): Promise<Transaction[]> {
+async function nordeaSeParse(filePath: string): Promise<Transaction[]> {
 
     try {
         const transactions = await readTransactionsFromFile(filePath);
         if (config.LOG == 'debug') {
-            console.log('Handelsbanken-parse results:');
+            console.log('Nordea-SE-parse results:');
             console.log(transactions);
         }
         return transactions;
@@ -82,4 +72,4 @@ async function handelsbankenParse(filePath: string): Promise<Transaction[]> {
 
 }
 
-export { handelsbankenParse };
+export { nordeaSeParse };
