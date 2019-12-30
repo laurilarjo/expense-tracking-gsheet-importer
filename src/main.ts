@@ -1,12 +1,9 @@
 import * as path from 'path';
 import {argv} from 'yargs';
 
-import { nordeaParse } from './lib/nordea-parse';
-import { opParse } from './lib/op-parse';
 import { detectBankAndUserFromFile } from './detect-bank';
 import { importToSheets, readFromSheets } from './lib/sheets';
 import { Transaction, Context, Bank, User } from './lib/types';
-import { norwegianParse } from './lib/norwegian-parse';
 
 /** 
  * How to run this?
@@ -82,20 +79,23 @@ async function run() {
     const context = await detectContext(argv);
     console.log('Bank detected as: ' + Bank[context.bank]);
     console.log('User detected as: ' + User[context.user]);
+    if (context.parser) {
+        console.log('Using parser: ' + context.parser.name);
+    }
 
     try {
         switch (context.runMode) {
             case 'read-file': {
                 console.log('Using read-file mode...');
                 console.log('');
-                const transactions = await parseFile(context.filePath, context);
+                const transactions = await parseFile(context);
                 console.log(`Found ${transactions.length} transactions.`);
                 console.log(transactions);
                 break;
             }
             case 'import': {
                 console.log('Importing to sheets...');
-                const transactions = await parseFile(context.filePath, context);
+                const transactions = await parseFile(context);
                 await importToSheets(transactions, context);
                 console.log('');
                 break;
@@ -118,19 +118,7 @@ async function run() {
     }
 }
 
-async function parseFile(filePath: string, context: Context): Promise<Transaction[]> {
-    if (context.bank == Bank.NordeaFI) {
-        console.log('using NordeaParse');
-        return await nordeaParse(filePath);
-    } else if (context.bank == Bank.OP) {
-        console.log('using OpParse');
-        return await opParse(filePath);
-    } else if (context.bank == Bank.Norwegian) {
-        console.log('using NorwegianParse');
-        return await norwegianParse(filePath);
-    } else {
-        console.log('using defaultParse');
-        return await nordeaParse(filePath);
-    }
+async function parseFile(context: Context): Promise<Transaction[]> {
+        return await context.parser(context.filePath);
 }
 

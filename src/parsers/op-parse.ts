@@ -4,8 +4,8 @@
 import * as fs from 'fs';
 import * as readline from 'readline';
 
-import config from './config';
-import { Transaction } from './types';
+import config from '../lib/config';
+import { Transaction } from '../lib/types';
 
 
 async function readTransactionsFromFile(filePath: string): Promise<Transaction[]> {

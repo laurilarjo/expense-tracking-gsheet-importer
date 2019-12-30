@@ -3,8 +3,8 @@
  */
 import * as xlsx from 'xlsx';
 
-import config from './config';
-import { Transaction } from './types';
+import config from '../lib/config';
+import { Transaction } from '../lib/types';
 
 
 async function readTransactionsFromFile(filePath: string): Promise<Transaction[]> {
@@ -12,11 +12,11 @@ async function readTransactionsFromFile(filePath: string): Promise<Transaction[]
     console.log(filePath);
     
     const workbook = xlsx.readFile(filePath);
-    const sheet = workbook.Sheets['transactions'];
-    const transactionArray = xlsx.utils.sheet_to_json(sheet);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const xlsTransactionArray = xlsx.utils.sheet_to_json(sheet);
     const transactions: Transaction[] = [];
 
-    transactionArray.forEach((line: any) => {
+    xlsTransactionArray.forEach((line: any) => {
         const transaction = parseLine(line);
         if (transaction) {
             transactions.push(transaction);
@@ -66,4 +66,4 @@ async function norwegianParse(filePath: string): Promise<Transaction[]> {
 
 }
 
-export {norwegianParse};
+export { norwegianParse };

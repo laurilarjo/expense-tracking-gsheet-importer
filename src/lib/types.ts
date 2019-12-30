@@ -4,6 +4,8 @@ export interface Context {
     user: User;
     filePath: string;
     runMode: string;
+    parser: Function;
+    sheetName: string;
 }
 ;
 export enum Bank {
