@@ -46,6 +46,7 @@ function parseLine(line: any): Transaction | null {
     payment.transactionType = line['Type'];
     payment.message = line['Merchant Category'];
     payment.amount = line['Amount'];
+    payment.amountEur = payment.amount;
 
     return new Transaction(payment);
 }

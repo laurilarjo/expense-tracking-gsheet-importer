@@ -74,6 +74,7 @@ function parseLine(line: string) {
     payment.payee = lineArr[5].replace(/"/g, '');
     payment.message = lineArr[8];
     payment.amount = parseFloat(lineArr[2].replace(',', '.'));
+    payment.amountEur = payment.amount;
 
     return new Transaction(payment);
 }

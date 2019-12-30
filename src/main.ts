@@ -72,6 +72,9 @@ async function detectContext(argv: any): Promise<Context> {
     } as Context
 
     context = await detectBankAndUserFromFile(filePath, context);
+    if (context.bank === undefined || context.user === undefined || context.sheetName === undefined) {
+        throw new Error('Bank, User or SheetName not set in Context');
+    }
     return context;
 }
 

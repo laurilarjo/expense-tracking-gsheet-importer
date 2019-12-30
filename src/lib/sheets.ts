@@ -208,7 +208,7 @@ async function appendDataToSheets(sheets: sheets_v4.Sheets, transactions: Transa
 
 function mapTransactionsToRows(transactions: Transaction[]) {
   return transactions.map(x => {
-    return [x.month, x.year, x.date, x.amount, x.payee, x.transactionType, x.message];
+    return [x.month, x.year, x.date, x.amount, x.amountEur, x.payee, x.transactionType, x.message];
   });
 }
 
@@ -221,9 +221,10 @@ function mapRowsToTransaction(rows: any[][]): Transaction[] {
         year: row[1],
         date: row[2],
         amount: parseFloat(row[3]),
-        payee: row[4] || '',
-        transactionType: row[5] || '',
-        message: row[6] || ''
+        amountEur: parseFloat(row[4]),
+        payee: row[5] || '',
+        transactionType: row[6] || '',
+        message: row[7] || ''
       });
     });
   }
