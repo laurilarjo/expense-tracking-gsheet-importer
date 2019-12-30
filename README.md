@@ -19,9 +19,12 @@ Parse Nordea TSV transaction files and import data to Google Sheets.
 - [x] Basic write transactions to sheets
 - [x] Read sheets and filter transactions based on it, so we don't add duplicate data
 - [x] Write data by appending to end of file
-- [ ] Add support to read OP
-- [ ] Add support to read Nordea Sweden
-- [ ] Add support to read Handelsbanken Sweden
-- [ ] Add support to read Norwegian (Finland)
-- [ ] Detect what Sheet to use based on imported file
+- [x] Add support to read OP
+- [x] Add support to read Nordea Sweden
+- [x] Add support to read Handelsbanken Sweden
+- [x] Add support to read Norwegian (Finland)
+- [ ] Bank detection from files won't work. Change to interactive console instead.
 - [ ] Change logging to Winston
+
+## Nice to do
+- [ ] Change currency exchange library to something newer. Current has dependencies to deprecated libs.
