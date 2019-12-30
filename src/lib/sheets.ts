@@ -39,6 +39,7 @@ async function importToSheets(newTransactions: Transaction[], context: Context):
     const sheets = await setupSheets();
     const existingTransactions = await getDataFromSheets(sheets, context);
     console.log('Comparing new data to existing Sheet data...');
+    console.log(existingTransactions);
     console.log('existingTransasctions length: ' + existingTransactions.length);
     console.log('newTransasctions length: ' + newTransactions.length);
     
@@ -220,8 +221,8 @@ function mapRowsToTransaction(rows: any[][]): Transaction[] {
         year: row[1],
         date: row[2],
         amount: parseFloat(row[3]),
-        payee: row[4],
-        transactionType: row[5],
+        payee: row[4] || '',
+        transactionType: row[5] || '',
         message: row[6] || ''
       });
     });
@@ -231,21 +232,10 @@ function mapRowsToTransaction(rows: any[][]): Transaction[] {
 }
 
 function getSheetName(context: Context): string {
-  if (context.bank === undefined || context.user === undefined) {
-    throw new Error('Bank or User not set in Context');
+  if (context.bank === undefined || context.user === undefined || context.sheetName === undefined) {
+    throw new Error('Bank, User or SheetName not set in Context');
   }
-  switch (context.bank | context.user) {
-    case Bank.NordeaFI | User.Lauri:
-      return config.SHEET_NAME_NORDEA_LAURI;
-    case Bank.OP | User.Lauri:
-      return config.SHEET_NAME_OP_LAURI;
-    case Bank.Norwegian | User.Lauri:
-        return config.SHEET_NAME_NORWEGIAN_LAURI;
-    case Bank.Handelsbanken | User.Lauri:
-        return config.SHEET_NAME_HANDELSBANKEN_LAURI;
-    default:
-      throw new Error('No sheet name found for current bank & user combo!');
-  }
+  return context.sheetName;
 }
 
 export {importToSheets, readFromSheets};

@@ -2,7 +2,7 @@
  * Reads Bank Norwegian Finland credit card transaction files in XLSX format
  */
 import * as xlsx from 'xlsx';
-import util = require('util');
+import * as moment from 'moment';
 import { JSDOM } from 'jsdom';
 import * as getRates from 'ecb-fx-rates';
 //import  { ExchangeRate, Currencies, ExchangeResponse } from 'exchange-rates-as-promised';
@@ -37,10 +37,9 @@ async function readTransactionsFromFile(filePath: string): Promise<Transaction[]
 
     
     const dom = await JSDOM.fromFile(filePath);
-    let workbook = xlsx.utils.book_new();
-    const ws1 = xlsx.utils.table_to_sheet(dom.window.document.querySelectorAll("table")[3]);
-    const xlsTransactionArray = xlsx.utils.sheet_to_json(ws1);
-    //console.log(xlsTransactionArray);
+    // The file is actually HTML with 4 tables. Interesting data is on the last.
+    const sheet = xlsx.utils.table_to_sheet(dom.window.document.querySelectorAll("table")[3]);
+    const xlsTransactionArray = xlsx.utils.sheet_to_json(sheet);
 
     const transactions: Transaction[] = [];
 
@@ -52,6 +51,11 @@ async function readTransactionsFromFile(filePath: string): Promise<Transaction[]
             transactions.push(transaction);
         }
     });
+
+    // I want oldest transactions to top
+    transactions.sort((a, b) => {
+        return (moment(a.date, 'D/M/YYYY') as any) - (moment(b.date, 'D/M/YYYY') as any);
+    })
 
     return transactions as Transaction[];
 }
@@ -70,10 +74,16 @@ function parseLine(line: any): Transaction | null {
     payment.month = date.m;
     payment.year = `${date.y}`;
     payment.date = `${date.d}/${date.m}/${date.y}`;
-    payment.payee = line['Text'];
+    payment.payee = `${line['Text']}`;
     payment.transactionType = '';
     payment.message = '';
-    payment.amount = line['Belopp']/100;
+
+    // Voi vittu sentään Handelsbanken
+    if (typeof(line['Belopp']) === 'string') {
+        payment.amount = parseFloat(line['Belopp'].replace(' ', '').replace(',', '.'));
+    } else {
+        payment.amount = line['Belopp'] / 100;
+    }
 
     return new Transaction(payment);
 }

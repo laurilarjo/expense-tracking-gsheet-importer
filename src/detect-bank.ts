@@ -19,6 +19,7 @@ async function detectBankAndUserFromFile(filePath: string, context: Context): Pr
         context.user = User.Lauri;
         context.bank = Bank.Norwegian;
         context.parser = norwegianParse;
+        context.sheetName = config.SHEET_NAME_NORWEGIAN_LAURI;
         return context;
     }
     if (filePath.endsWith('xls')) {
@@ -26,6 +27,7 @@ async function detectBankAndUserFromFile(filePath: string, context: Context): Pr
         context.user = User.Lauri;
         context.bank = Bank.Handelsbanken;
         context.parser = handelsbankenParse;
+        context.sheetName = config.SHEET_NAME_HANDELSBANKEN_LAURI;
         return context;
     }
     return new Promise((resolve, reject) => {
@@ -43,12 +45,14 @@ async function detectBankAndUserFromFile(filePath: string, context: Context): Pr
                 context.user = User.Lauri;
                 context.bank = Bank.NordeaFI;
                 context.parser = nordeaParse;
+                context.sheetName = config.SHEET_NAME_NORDEA_LAURI;
                 found = true;
             } else if (_.includes(line, config.FILE_DETECTION_OP_LAURI)) {
                 // TODO: we actually can't detect user from this
                 context.user = User.Lauri;
                 context.bank = Bank.OP;
                 context.parser = opParse;
+                context.sheetName = config.SHEET_NAME_OP_LAURI;
                 found = true;
             }
 
