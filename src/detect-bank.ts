@@ -11,6 +11,7 @@ import { Context, User, Bank } from './lib/types';
 import { norwegianParse } from './parsers/norwegian-parse';
 import { opParse } from './parsers/op-parse';
 import { nordeaParse } from './parsers/nordea-parse';
+import { handelsbankenParse } from './parsers/handelsbanken-parse';
 
 async function detectBankAndUserFromFile(filePath: string, context: Context): Promise<Context> {
     if (filePath.endsWith('xlsx')) {
@@ -24,6 +25,7 @@ async function detectBankAndUserFromFile(filePath: string, context: Context): Pr
         // TODO: we can't detect user from here.
         context.user = User.Lauri;
         context.bank = Bank.Handelsbanken;
+        context.parser = handelsbankenParse;
         return context;
     }
     return new Promise((resolve, reject) => {

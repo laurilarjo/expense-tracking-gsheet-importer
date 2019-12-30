@@ -12,7 +12,7 @@ async function readTransactionsFromFile(filePath: string): Promise<Transaction[]
     console.log(filePath);
     
     const workbook = xlsx.readFile(filePath);
-    const sheet = workbook.Sheets['transactions'];
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const xlsTransactionArray = xlsx.utils.sheet_to_json(sheet);
     const transactions: Transaction[] = [];
 
@@ -66,4 +66,4 @@ async function norwegianParse(filePath: string): Promise<Transaction[]> {
 
 }
 
-export {norwegianParse};
+export { norwegianParse };
