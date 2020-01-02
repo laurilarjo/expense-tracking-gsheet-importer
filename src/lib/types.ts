@@ -1,14 +1,10 @@
 
-
-
-// TODO: later try to use ReadSheets = 'read-sheets'
-export enum RunMode {
-    ReadSheets,
-    ReadFile,
-    Import
+export interface CmdLineArguments {
+    file: string;
+    user: string;
+    bank: string;
+    runMode: string;
 }
-
-
 
 export interface Context {
     bank: Bank;
@@ -17,6 +13,13 @@ export interface Context {
     runMode: RunMode;
     parser: Function;
     sheetName: string;
+}
+
+// TODO: later try to use ReadSheets = 'read-sheets'
+export enum RunMode {
+    ReadSheets,
+    ReadFile,
+    Import
 }
 
 export enum Bank {

@@ -2,7 +2,6 @@
 import {argv} from 'yargs';
 
 import { getContext } from './context';
-import { inquireContext } from './inquire-context';
 import { importToSheets, readFromSheets } from './lib/sheets';
 import { Transaction, Context, Bank, User, RunMode } from './lib/types';
 
@@ -13,7 +12,12 @@ import { Transaction, Context, Bank, User, RunMode } from './lib/types';
  * 
 */
 
-run();
+try {
+    run();
+} catch (error) {
+    console.log(error);
+    process.exit(0);
+}
 
 function printInstructions() {
     console.log(`
@@ -31,37 +35,19 @@ With NPM:
     `);
 }
 
-function validateArguments(): void {
-    // Check for allowed modes
-    const runMode = RunMode[argv.mode as keyof typeof RunMode];
-    if (runMode == undefined) {
-        console.log('Incorrect RunMode provided!');
-        printInstructions()
-        process.exit(1);
-    }
 
-    // Check that file is provided when needed.
-    if ((runMode == RunMode.ReadFile || runMode == RunMode.Import) && !argv.file) {
-        console.log('File must be provided!');
-        printInstructions();
-        process.exit(1);
-    }
-
-    if (!argv.bank || !argv.user) {
-        console.log('Bank and User must be provided!');
-        printInstructions();
-        process.exit(1);
-    }
-}
 
 async function run() {
     let context = {} as Context;
-    if (!argv.mode) {
-        context = await inquireContext();
-    } else {
-        validateArguments();
+    try {
         context = await getContext(argv);
+    } catch (error) {
+        printInstructions();
+        process.exit(0);
     }
+    console.log('Detected context:');
+    console.log(context);
+
     // TODO: These can be removed once inquirer is done
     console.log('Bank detected as: ' + Bank[context.bank]);
     console.log('User detected as: ' + User[context.user]);
