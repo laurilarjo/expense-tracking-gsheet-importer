@@ -1,6 +1,9 @@
+import * as fs from 'fs';
 import * as path from 'path';
+import * as inquirer from 'inquirer';
+import * as util from 'util';
 
-import { Context, Bank, User, RunMode } from './lib/types';
+import { Context, Bank, User, RunMode, CmdLineArguments } from './lib/types';
 import config from './lib/config';
 import { norwegianParse } from './parsers/norwegian-parse';
 import { opParse } from './parsers/op-parse';
@@ -10,8 +13,50 @@ import { handelsbankenParse } from './parsers/handelsbanken-parse';
 
 
 async function getContext(argv: any): Promise<Context> {
-    const context = await detectContextFromArguments(argv);
-    return context;
+    if (!argv.mode || !argv.file) {
+        return await inquireContext();
+    } else {
+        return await detectContextFromArguments(argv);
+    }
+}
+
+function validateContext(context: Context): void {
+    // Check that file is provided when needed.
+    if ((context.runMode == RunMode.ReadFile || context.runMode == RunMode.Import) && !context.filePath) {
+        console.log('File must be provided!');
+        process.exit(1);
+    }
+}
+
+async function inquireContext(): Promise<Context> {
+    let context = { user: User.Becky} as Context;
+    console.log('Here we will ask user for input');
+
+    const files = await getFilesInDir();
+
+    const questions = [
+        { type: 'list', name: 'file', message: 'Select RunMode', choices: files },
+        { type: 'list', name: 'user', message: 'Choose User', choices: getEnumArray(User) },
+        { type: 'list', name: 'bank', message: 'Choose Bank', choices: getEnumArray(Bank) },
+        { type: 'list', name: 'runMode', message: 'Select RunMode', choices: getEnumArray(RunMode) },
+    ];
+    const answers: CmdLineArguments = await inquirer.prompt(questions);
+
+    const user = getEnumFromString(answers.user, User, 'User');
+    const bank = getEnumFromString(answers.bank, Bank, 'Bank');
+    const filePath = answers.file;
+    const runMode = getEnumFromString(answers.runMode, RunMode, 'RunMode');
+    const sheetName = getSheetName(user, bank);
+    const parser = getParser(bank);
+
+    return { 
+        ...{runMode},
+        ...{bank}, 
+        ...{user},
+        ...{filePath},
+        ...{sheetName},
+        ...{parser}
+    } as Context;
 }
 
 /**
@@ -22,24 +67,15 @@ async function getContext(argv: any): Promise<Context> {
  */
 async function detectContextFromArguments(argv: any): Promise<Context> {
 
-    const runMode = RunMode[argv.mode as keyof typeof RunMode];
-    if (runMode == undefined) {
-        throw new Error('Incorrect RunMode provided!');
-    }
+    const runMode = getEnumFromString(argv.mode, RunMode, 'RunMode');
     console.log('detected runmode: ' + RunMode[runMode]);
 
     // Bank. Verify it's found in our Enum options.
-    const bank : Bank = Bank[argv.bank as keyof typeof Bank];
-    if (bank == undefined) {
-        throw new Error('Unsupported Bank provided: ' + argv.bank)
-    }
+    const bank = getEnumFromString(argv.bank, Bank, 'Bank');
     console.log('detected bank: ' + Bank[bank]);
 
     // User. Verify it's found in our Enum options.
-    const user : User = User[argv.user as keyof typeof User];
-    if (user == undefined) {
-        throw new Error('Unsupported User provided: ' + argv.user)
-    }
+    const user = getEnumFromString(argv.user, User, 'User');
     console.log('detected user: ' + User[user]);
 
     // Filepath. This is not validated at all.
@@ -64,8 +100,15 @@ async function detectContextFromArguments(argv: any): Promise<Context> {
         ...{filePath},
         ...{sheetName},
         ...{parser}
-
     } as Context;
+}
+
+function getEnumFromString<T>(value: string, enumObject: T, enumName: string): T[keyof T] {
+    const user = enumObject[value as keyof typeof enumObject];
+    if (user == undefined) {
+        throw new Error(`Unsupported ${enumName} provided: ${value}`);
+    }
+    return user;
 }
 
 function getSheetName(user: User, bank: Bank): string {
@@ -99,6 +142,36 @@ function getParser(bank: Bank): Function {
         default:
             throw new Error('Unsupported bank provided. No parser found!');
     }
+}
+
+async function getFilesInDir(): Promise<string[]> {
+    
+    const readdir = util.promisify(fs.readdir);
+    const directoryPath = path.join(__dirname, '../.');
+    let result: string[] = ['Nothing'];
+
+    try {
+        const files = await readdir(directoryPath);
+        for (const file of files) {
+            if (file.includes('.xls') || file.includes('.xlsx') || file.includes('.txt') || file.includes('.csv')) {
+                result.push(file);
+            }
+        };
+        return result;
+    } catch {
+        throw new Error('Error reading directory: ' + directoryPath);
+    }
+}
+
+function getEnumArray(enumObject: any): string[] {
+    let enumValues: string[] = [];
+
+    for(let value in enumObject) {
+        if(typeof enumObject[value] === 'number') {
+            enumValues.push(value);
+        }
+    }
+    return enumValues;
 }
 
 export { getContext }
