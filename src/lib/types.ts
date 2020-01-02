@@ -1,13 +1,24 @@
 
+
+
+// TODO: later try to use ReadSheets = 'read-sheets'
+export enum RunMode {
+    ReadSheets,
+    ReadFile,
+    Import
+}
+
+
+
 export interface Context {
     bank: Bank;
     user: User;
     filePath: string;
-    runMode: string;
+    runMode: RunMode;
     parser: Function;
     sheetName: string;
 }
-;
+
 export enum Bank {
     NordeaFI,
     NordeaSWE,

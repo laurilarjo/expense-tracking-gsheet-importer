@@ -12,6 +12,7 @@
     "import": "node built/main.js --mode=import"
   },
   "dependencies": {
+    "@types/inquirer": "^6.5.0",
     "@types/jsdom": "^12.2.4",
     "@types/lodash": "^4.14.149",
     "@types/yargs": "^13.0.3",
@@ -19,6 +20,7 @@
     "ecb-fx-rates": "^1.0.0",
     "exchange-rates-as-promised": "^1.0.1",
     "googleapis": "^39.2.0",
+    "inquirer": "^7.0.1",
     "jsdom": "^15.2.1",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
