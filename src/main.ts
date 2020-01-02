@@ -1,9 +1,10 @@
-import * as path from 'path';
+
 import {argv} from 'yargs';
 
-import { detectBankAndUserFromFile } from './detect-bank';
+import { getContext } from './context';
+import { inquireContext } from './inquire-context';
 import { importToSheets, readFromSheets } from './lib/sheets';
-import { Transaction, Context, Bank, User } from './lib/types';
+import { Transaction, Context, Bank, User, RunMode } from './lib/types';
 
 /** 
  * How to run this?
@@ -12,83 +13,63 @@ import { Transaction, Context, Bank, User } from './lib/types';
  * 
 */
 
-const RunMode = {
-    ReadSheets: 'read-sheets',
-    ReadFile: 'read-file',
-    Import: 'import'
-}
-
-validateArguments();
 run();
 
 function printInstructions() {
     console.log(`
 Usage example:
-    node built/main.js --mode=read-file --file=./sample-files/Tapahtumat_nordea_sample.txt
+    node built/main.js --mode=<runMode> --file=<filepath> --bank=<bank> --user=<user>
 
 Allowed modes are: ${JSON.stringify(Object.values(RunMode))});
+Allowed banks are: ...
+Allowed users are: ...
 
 With NPM:
-    npm run read-sheets
-    npm run read-file --file=./sample-files/Tapahtumat_nordea_sample.txt
-    npm run import --file=./sample-files/Tapahtumat_nordea_sample.txt
+    npm run read-sheets --bank=Nordea --user=Lauri
+    npm run read-file --file=./sample-files/Tapahtumat_nordea_sample.txt --bank=Nordea --user=Lauri
+    npm run import --file=./sample-files/Tapahtumat_nordea_sample.txt --bank=Nordea --user=Lauri
     `);
 }
 
 function validateArguments(): void {
     // Check for allowed modes
-    if (!argv.mode || !Object.values(RunMode).includes(argv.mode as string)) {
-        console.log('Correct mode must be provided!');
+    const runMode = RunMode[argv.mode as keyof typeof RunMode];
+    if (runMode == undefined) {
+        console.log('Incorrect RunMode provided!');
         printInstructions()
         process.exit(1);
     }
 
     // Check that file is provided when needed.
-    if ((argv.mode == 'read-file' || argv.mode == 'import') && !argv.file) {
+    if ((runMode == RunMode.ReadFile || runMode == RunMode.Import) && !argv.file) {
         console.log('File must be provided!');
+        printInstructions();
+        process.exit(1);
+    }
+
+    if (!argv.bank || !argv.user) {
+        console.log('Bank and User must be provided!');
         printInstructions();
         process.exit(1);
     }
 }
 
-async function detectContext(argv: any): Promise<Context> {
-    let filePath = '';
-    const runMode = argv.mode as string;
-
-    // TODO: now using a default bank & user, but this should be able to set
-    if (runMode == 'read-sheets') {
-        return { 
-            runMode: 'read-sheets',
-            bank: Bank.OP,
-            user: User.Lauri
-        } as Context;
-    }
-    
-    filePath = path.join(process.cwd(), argv.file as string);
-    
-    let context = {
-        ...{filePath}, 
-        ...{runMode} 
-    } as Context
-
-    context = await detectBankAndUserFromFile(filePath, context);
-    if (context.bank === undefined || context.user === undefined || context.sheetName === undefined) {
-        throw new Error('Bank, User or SheetName not set in Context');
-    }
-    return context;
-}
-
 async function run() {
-    const context = await detectContext(argv);
+    let context = {} as Context;
+    if (!argv.mode) {
+        context = await inquireContext();
+    } else {
+        validateArguments();
+        context = await getContext(argv);
+    }
+    // TODO: These can be removed once inquirer is done
     console.log('Bank detected as: ' + Bank[context.bank]);
     console.log('User detected as: ' + User[context.user]);
-    if (context.parser) {
-        console.log('Using parser: ' + context.parser.name);
-    }
+    console.log('Using parser: ' + (context.parser ? context.parser.name : null));
 
     try {
         switch (context.runMode) {
-            case 'read-file': {
+            case RunMode.ReadFile: {
                 console.log('Using read-file mode...');
                 console.log('');
                 const transactions = await parseFile(context);
@@ -96,14 +77,14 @@ async function run() {
                 console.log(transactions);
                 break;
             }
-            case 'import': {
+            case RunMode.Import: {
                 console.log('Importing to sheets...');
                 const transactions = await parseFile(context);
                 await importToSheets(transactions, context);
                 console.log('');
                 break;
             }
-            case 'read-sheets': {
+            case RunMode.ReadSheets: {
                 console.log('Reading sheets...');
                 const transactions = await readFromSheets(context);
                 console.log(`Found ${transactions.length} rows.`);
