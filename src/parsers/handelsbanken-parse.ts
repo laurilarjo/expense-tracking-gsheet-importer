@@ -24,7 +24,7 @@ async function readTransactionsFromFile(filePath: string): Promise<Transaction[]
     for (const line of xlsTransactionArray) {
         const transaction = parseLine(line);
         if (transaction) {
-            transaction.amountEur = await convertSEKToEur(transaction.amount);
+            transaction.amountEur = await convertSEKToEur(transaction.amount, transaction.date);
             transactions.push(transaction);
         }
     };

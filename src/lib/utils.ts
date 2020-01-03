@@ -1,16 +1,26 @@
 import * as getRates from 'ecb-fx-rates';
+import moment = require('moment');
 //import  { ExchangeRate, Currencies, ExchangeResponse } from 'exchange-rates-as-promised';
 
-let exchangeRateSEK: number;
+let currencyMap: Map<string, number> = new Map();
 
-
-async function convertSEKToEur(amount: number): Promise<number> {
-    if (this.exchangeRateSEK === undefined) {
+async function convertSEKToEur(amount: number, date: string): Promise<number> {
+    
+    const firstOfMonth: string = moment(date, 'D/M/YYYY').startOf('month').toString();
+    const found = currencyMap.get(firstOfMonth);
+    let exchangeRate;
+    if (!found) {
         // TODO: This library uses old xlm2json, which has dependencies to deprecated packages. Should change.
-        this.exchangeRateSEK = await getRates({currency: 'SEK'});
-        console.log('Rate fetched for SEK: ' + this.exchangeRateSEK);
+        console.log(`Fetching SEK rate for date: ${firstOfMonth.toString()}`);
+        exchangeRate = await getRates({currency: 'SEK', date: firstOfMonth});
+        if (exchangeRate) {
+            currencyMap.set(firstOfMonth, exchangeRate);
+        }
+        console.log(`Rate fetched for SEK: ${exchangeRate} for date: ${firstOfMonth.toString()}`);
+    } else {
+        exchangeRate = found;
     }
-    return Math.round((amount / this.exchangeRateSEK) * 100) / 100;
+    return Math.round((amount / exchangeRate) * 100) / 100;
 }
 
   /*
