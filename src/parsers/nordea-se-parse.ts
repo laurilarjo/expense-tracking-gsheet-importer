@@ -21,7 +21,7 @@ async function readTransactionsFromFile(filePath: string): Promise<Transaction[]
     for (const line of xlsTransactionArray) {
         const transaction = parseLine(line);
         if (transaction) {
-            transaction.amountEur = await convertSEKToEur(transaction.amount);
+            transaction.amountEur = await convertSEKToEur(transaction.amount, transaction.date);
             transactions.push(transaction);
         }
     };
@@ -45,9 +45,9 @@ function parseLine(line: any): Transaction | null {
 
     let payment = {} as Transaction;
     const date = moment(line['Datum'], 'YYYY-MM-DD');
-    payment.month = date.month();
-    payment.year = `${date.year()}`;
-    payment.date = `${date.day()}/${date.month()}/${date.year()}`;
+    payment.month = parseInt(date.format('MM'));
+    payment.year = date.format('YYYY');
+    payment.date = date.format('DD/MM/YYYY');
     payment.payee = `${line['Transaktion']}`;
     payment.transactionType = '';
     payment.message = '';

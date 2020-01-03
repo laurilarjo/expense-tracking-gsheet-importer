@@ -17,9 +17,9 @@ export interface Context {
 
 // TODO: later try to use ReadSheets = 'read-sheets'
 export enum RunMode {
-    ReadSheets,
+    Import,
     ReadFile,
-    Import
+    ReadSheets
 }
 
 export enum Bank {
@@ -36,8 +36,8 @@ export enum User {
 
 export class Transaction {
     month: number;
-    year: string;
-    date: string; // format is DD/MM/YYYY
+    year: string; // TODO: Change this to number
+    date: string; // format is DD/MM/YYYY. TODO: Change this to actual date or moment.
     amount: number;
     amountEur: number;
     payee: string;
