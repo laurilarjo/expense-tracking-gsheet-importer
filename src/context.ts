@@ -121,7 +121,11 @@ function getSheetName(user: User, bank: Bank): string {
     } else if (user == User.Lauri && bank == Bank.Handelsbanken) {
         return config.SHEET_NAME_HANDELSBANKEN_LAURI;
     } else if (user == User.Becky && bank == Bank.NordeaSWE) {
-        return config.SHEET_NAME_NORDEASE_BECKY;
+        return config.SHEET_NAME_NORDEASWE_BECKY;
+    } else if (user == User.Becky && bank == Bank.NordeaFI) {
+        return config.SHEET_NAME_NORDEAFI_BECKY;
+    } else if (user == User.Becky && bank == Bank.OP) {
+        return config.SHEET_NAME_OP_BECKY;
     } else {
         throw new Error('No sheet name found for current bank & user combo!');
     }
