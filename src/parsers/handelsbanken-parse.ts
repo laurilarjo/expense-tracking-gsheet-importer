@@ -16,7 +16,8 @@ async function readTransactionsFromFile(filePath: string): Promise<Transaction[]
     
     const dom = await JSDOM.fromFile(filePath);
     // The file is actually HTML with 4 tables. Interesting data is on the last.
-    const sheet = xlsx.utils.table_to_sheet(dom.window.document.querySelectorAll("table")[3]);
+    // Need to read it as raw, otherwise xlsx tries to incorrectly interpret some cells as dates.
+    const sheet = xlsx.utils.table_to_sheet(dom.window.document.querySelectorAll("table")[3], {raw: true});
     const xlsTransactionArray = xlsx.utils.sheet_to_json(sheet);
 
     const transactions: Transaction[] = [];
@@ -47,10 +48,10 @@ function parseLine(line: any): Transaction | null {
     // Belopp - amount
 
     let payment = {} as Transaction;    
-    const date = xlsx.SSF.parse_date_code(line['Transaktionsdatum']);
-    payment.month = date.m;
-    payment.year = `${date.y}`;
-    payment.date = `${date.d}/${date.m}/${date.y}`;
+    const date = moment(line['Transaktionsdatum'], 'YYYY-MM-DD');
+    payment.month = parseInt(date.format('MM'));
+    payment.year = date.format('YYYY');
+    payment.date = date.format('DD/MM/YYYY');
     payment.payee = `${line['Text']}`;
     payment.transactionType = '';
     payment.message = '';
