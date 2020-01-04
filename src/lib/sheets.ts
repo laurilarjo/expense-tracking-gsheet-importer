@@ -58,6 +58,30 @@ async function importToSheets(newTransactions: Transaction[], context: Context):
   }
 }
 
+async function compareToSheets(newTransactions: Transaction[], context: Context): Promise<void> {
+  if (_.isEmpty(newTransactions)) {
+    console.log('No transactions to import.');
+    return;
+  }
+
+  try {
+    const sheets = await setupSheets();
+    const existingTransactions = await getDataFromSheets(sheets, context);
+    console.log('Comparing new data to existing Sheet data...');
+    console.log(existingTransactions);
+    console.log('existingTransasctions length: ' + existingTransactions.length);
+    console.log('newTransasctions length: ' + newTransactions.length);
+    
+    // TODO: Now with currency conversions added, the results won't match if exchange rate has changed. Fix this.
+    const transactionsToWrite = _.differenceWith(newTransactions, existingTransactions, _.isEqual);
+
+    console.log('After comparison, going to write:');
+    console.log(transactionsToWrite.length);
+  } catch (err) {
+    console.log('Error importing to Sheets:', err);
+  }
+}
+
 /**
  * Exported.
  * 
@@ -240,4 +264,4 @@ function getSheetName(context: Context): string {
   return context.sheetName;
 }
 
-export {importToSheets, readFromSheets};
+export {importToSheets, compareToSheets, readFromSheets};

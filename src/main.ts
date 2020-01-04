@@ -2,7 +2,7 @@
 import {argv} from 'yargs';
 
 import { getContext } from './context';
-import { importToSheets, readFromSheets } from './lib/sheets';
+import { importToSheets, readFromSheets, compareToSheets } from './lib/sheets';
 import { Transaction, Context, Bank, User, RunMode } from './lib/types';
 
 /** 
@@ -60,7 +60,7 @@ async function run() {
                 console.log('');
                 const transactions = await parseFile(context);
                 console.log(`Found ${transactions.length} transactions.`);
-                console.log(transactions);
+                //console.log(transactions);
                 break;
             }
             case RunMode.Import: {
@@ -75,6 +75,13 @@ async function run() {
                 const transactions = await readFromSheets(context);
                 console.log(`Found ${transactions.length} rows.`);
                 console.log(transactions);
+                break;
+            }
+            case RunMode.DryRun: {
+                console.log('Doing a dry run...');
+                const transactions = await parseFile(context);
+                await compareToSheets(transactions, context);
+                console.log('');
                 break;
             }
             default: {

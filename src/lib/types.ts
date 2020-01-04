@@ -19,7 +19,8 @@ export interface Context {
 export enum RunMode {
     Import,
     ReadFile,
-    ReadSheets
+    ReadSheets,
+    DryRun
 }
 
 export enum Bank {
@@ -37,7 +38,7 @@ export enum User {
 export class Transaction {
     month: number;
     year: string; // TODO: Change this to number
-    date: string; // format is DD/MM/YYYY. TODO: Change this to actual date or moment.
+    date: string; // format is DD/MM/YYYY. It's not date because the result goes to GSheet and date messes things up.
     amount: number;
     amountEur: number;
     payee: string;
