@@ -6,19 +6,15 @@
   "license": "MIT",
   "scripts": {
     "dev": "tsc -w",
+    "build": "tsc",
     "start": "node built/main.js",
     "read-sheets": "node built/main.js --mode=read-sheets",
     "read-file": "node built/main.js --mode=read-file",
     "import": "node built/main.js --mode=import"
   },
   "dependencies": {
-    "@types/inquirer": "^6.5.0",
-    "@types/jsdom": "^12.2.4",
-    "@types/lodash": "^4.14.149",
-    "@types/yargs": "^13.0.3",
     "dotenv": "^8.2.0",
-    "ecb-fx-rates": "^1.0.0",
-    "exchange-rates-as-promised": "^1.0.1",
+    "exchange-rates-as-promised": "^1.0.4",
     "googleapis": "^39.2.0",
     "inquirer": "^7.0.1",
     "jsdom": "^15.2.1",
@@ -28,6 +24,10 @@
     "yargs": "^15.0.2"
   },
   "devDependencies": {
-    "@types/node": "^12.12.12"
+    "@types/node": "^12.12.12",
+    "@types/inquirer": "^6.5.0",
+    "@types/jsdom": "^12.2.4",
+    "@types/lodash": "^4.14.149",
+    "@types/yargs": "^13.0.3"
   }
 }
