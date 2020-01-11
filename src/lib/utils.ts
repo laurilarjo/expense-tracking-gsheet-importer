@@ -1,6 +1,5 @@
-import * as getRates from 'ecb-fx-rates';
 import moment = require('moment');
-import  { ExchangeRate, Currencies, ExchangeResponse, HistoricalRates } from 'exchange-rates-as-promised';
+import  { ExchangeRate, Currencies } from 'exchange-rates-as-promised';
 
 let currencyMap: Map<string, number> = new Map();
 
@@ -11,7 +10,6 @@ async function convertSEKToEur(amount: number, date: string): Promise<number> {
     let SEK;
     if (!found) {
         console.log(`Fetching SEK rate for date: ${firstOfMonth.toString()}`);
-        //exchangeRate = await getRates({currency: 'SEK', date: firstOfMonth});
         const exchangeRate = new ExchangeRate();
         exchangeRate.setBaseCurrency(Currencies.EUR);
         exchangeRate.setCurrencies([Currencies.SEK]);
@@ -31,8 +29,5 @@ async function convertSEKToEur(amount: number, date: string): Promise<number> {
     }
     return Math.round((amount / SEK) * 100) / 100;
 }
-
-
-    
 
 export { convertSEKToEur };
