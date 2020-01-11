@@ -77,6 +77,7 @@ async function compareToSheets(newTransactions: Transaction[], context: Context)
 
     console.log('After comparison, going to write:');
     console.log(transactionsToWrite.length);
+    console.log(transactionsToWrite);
   } catch (err) {
     console.log('Error importing to Sheets:', err);
   }
