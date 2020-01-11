@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "tsc -w",
+    "build": "tsc",
     "start": "node built/main.js",
     "read-sheets": "node built/main.js --mode=read-sheets",
     "read-file": "node built/main.js --mode=read-file",
@@ -18,7 +19,7 @@
     "@types/yargs": "^13.0.3",
     "dotenv": "^8.2.0",
     "ecb-fx-rates": "^1.0.0",
-    "exchange-rates-as-promised": "^1.0.1",
+    "exchange-rates-as-promised": "^1.0.4",
     "googleapis": "^39.2.0",
     "inquirer": "^7.0.1",
     "jsdom": "^15.2.1",
