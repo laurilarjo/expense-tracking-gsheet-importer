@@ -1,5 +1,5 @@
 /**
- * Reads Bank Norwegian Finland credit card transaction files in XLSX format
+ * Reads Nordea Sweden xls files
  */
 import * as xlsx from 'xlsx';
 import * as moment from 'moment';
