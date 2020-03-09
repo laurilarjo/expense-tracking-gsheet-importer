@@ -68,16 +68,19 @@ async function compareToSheets(newTransactions: Transaction[], context: Context)
     const sheets = await setupSheets();
     const existingTransactions = await getDataFromSheets(sheets, context);
     console.log('Comparing new data to existing Sheet data...');
+    console.log(`EXISTING TRANSACTIONS: ${existingTransactions.length}`);
     console.log(existingTransactions);
-    console.log('existingTransasctions length: ' + existingTransactions.length);
-    console.log('newTransasctions length: ' + newTransactions.length);
     
     // TODO: Now with currency conversions added, the results won't match if exchange rate has changed. Fix this.
     const transactionsToWrite = _.differenceWith(newTransactions, existingTransactions, _.isEqual);
 
-    console.log('After comparison, going to write:');
-    console.log(transactionsToWrite.length);
+    console.log(`After comparison, going to write: ${transactionsToWrite.length}`);
     console.log(transactionsToWrite);
+    console.log('***** SUMMARY: ********');
+    console.log(`Existing transactions: ${existingTransactions.length}`);
+    console.log(`New transactions: ${newTransactions.length}`);
+    console.log('Going to write:');
+    console.log(transactionsToWrite.length);
   } catch (err) {
     console.log('Error importing to Sheets:', err);
   }

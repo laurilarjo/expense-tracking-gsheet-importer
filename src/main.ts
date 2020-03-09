@@ -1,7 +1,7 @@
 
 import {argv} from 'yargs';
 
-import { getContext } from './context';
+import { getContext, inquireImportRun } from './context';
 import { importToSheets, readFromSheets, compareToSheets } from './lib/sheets';
 import { Transaction, Context, Bank, User, RunMode } from './lib/types';
 
@@ -47,8 +47,6 @@ async function run() {
     }
     console.log('Detected context:');
     console.log(context);
-
-    // TODO: These can be removed once inquirer is done
     console.log('Bank detected as: ' + Bank[context.bank]);
     console.log('User detected as: ' + User[context.user]);
     console.log('Using parser: ' + (context.parser ? context.parser.name : null));
@@ -64,10 +62,7 @@ async function run() {
                 break;
             }
             case RunMode.Import: {
-                console.log('Importing to sheets...');
-                const transactions = await parseFile(context);
-                await importToSheets(transactions, context);
-                console.log('');
+                await makeImport(context);
                 break;
             }
             case RunMode.ReadSheets: {
@@ -82,6 +77,11 @@ async function run() {
                 const transactions = await parseFile(context);
                 await compareToSheets(transactions, context);
                 console.log('');
+                const importRun = await inquireImportRun();
+                if (importRun) {
+                    context.runMode = RunMode.Import;
+                    makeImport(context);
+                }
                 break;
             }
             default: {
@@ -93,6 +93,13 @@ async function run() {
         console.log(error);
         process.exit(0);
     }
+}
+
+async function makeImport(context: Context) {
+    console.log('Importing to sheets...');
+    const transactions = await parseFile(context);
+    await importToSheets(transactions, context);
+    console.log('');
 }
 
 async function parseFile(context: Context): Promise<Transaction[]> {

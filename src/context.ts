@@ -28,6 +28,16 @@ function validateContext(context: Context): void {
     }
 }
 
+async function inquireImportRun(): Promise<boolean> {
+    interface Answer { importRun: boolean };
+    const question = [
+        { type: 'confirm', name: 'importRun', message: 'Do you want to run import?', default: false }
+    ];
+
+    const answer: Answer = await inquirer.prompt(question);
+    return answer.importRun;
+}
+
 async function inquireContext(): Promise<Context> {
     let context = { user: User.Becky} as Context;
     console.log('Here we will ask user for input');
@@ -35,7 +45,7 @@ async function inquireContext(): Promise<Context> {
     const files = await getFilesInDir();
 
     const questions = [
-        { type: 'list', name: 'file', message: 'Select RunMode', choices: files },
+        { type: 'list', name: 'file', message: 'Select File', choices: files },
         { type: 'list', name: 'user', message: 'Choose User', choices: getEnumArray(User) },
         { type: 'list', name: 'bank', message: 'Choose Bank', choices: getEnumArray(Bank) },
         { type: 'list', name: 'runMode', message: 'Select RunMode', choices: getEnumArray(RunMode) },
@@ -178,4 +188,4 @@ function getEnumArray(enumObject: any): string[] {
     return enumValues;
 }
 
-export { getContext }
+export { getContext, inquireImportRun }
