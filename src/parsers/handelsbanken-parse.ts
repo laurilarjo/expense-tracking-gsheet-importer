@@ -1,5 +1,8 @@
 /**
  * Reads Handelsbanken Sweden xls files (they are html in reality)
+ * 
+ * TODO: Handelsbanken creates transactions for card reservations with prefix "Prel ". 
+ * So those should be filtered out.
  */
 import * as xlsx from 'xlsx';
 import * as moment from 'moment';
