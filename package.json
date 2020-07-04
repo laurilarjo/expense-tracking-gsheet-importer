@@ -2,15 +2,15 @@
   "name": "parse-nordea-fi-tsv",
   "version": "1.0.0",
   "main": "app.js",
-  "author": "Lauri Larjo, based on code by Wilhelm Törnroos",
+  "author": "Lauri Larjo, based on initial code by Wilhelm Törnroos",
   "license": "MIT",
   "scripts": {
     "dev": "tsc -w",
     "build": "tsc",
-    "start": "node built/main.js",
-    "read-sheets": "node built/main.js --mode=read-sheets",
-    "read-file": "node built/main.js --mode=read-file",
-    "import": "node built/main.js --mode=import"
+    "start": "ts-node src/main.ts",
+    "read-sheets": "ts-node src/main.ts --mode=read-sheets",
+    "read-file": "ts-node src/main.ts --mode=read-file",
+    "import": "ts-node src/main.ts --mode=import"
   },
   "dependencies": {
     "dotenv": "^8.2.0",
@@ -20,6 +20,8 @@
     "jsdom": "^15.2.1",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.6",
     "xlsx": "^0.15.3",
     "yargs": "^15.0.2"
   },
