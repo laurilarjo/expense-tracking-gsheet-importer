@@ -45,6 +45,10 @@ function parseLine(line: any): Transaction | null {
     if (!line) {
         return null;
     }
+    // Do not include rows which are still preliminary payments (katevaraus)
+    if ((line['Text'] as string).includes('Prel ')) {
+        return null;
+    }
 
     // Transaktionsdatum - date
     // Text - payee
