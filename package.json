@@ -18,7 +18,7 @@
     "googleapis": "^39.2.0",
     "inquirer": "^7.0.1",
     "jsdom": "^15.2.1",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "moment": "^2.24.0",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.6",
