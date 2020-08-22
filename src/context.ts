@@ -60,12 +60,12 @@ async function inquireContext(): Promise<Context> {
     const parser = getParser(bank);
 
     return { 
-        ...{runMode},
-        ...{bank}, 
-        ...{user},
-        ...{filePath},
-        ...{sheetName},
-        ...{parser}
+        runMode,
+        bank, 
+        user,
+        filePath,
+        sheetName,
+        parser
     } as Context;
 }
 

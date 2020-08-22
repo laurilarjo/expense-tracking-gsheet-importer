@@ -20,7 +20,6 @@ export enum RunMode {
     Import,
     ReadFile,
     ReadSheets,
-    DryRun
 }
 
 export enum Bank {
