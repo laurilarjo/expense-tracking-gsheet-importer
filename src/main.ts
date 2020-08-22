@@ -61,10 +61,6 @@ async function run() {
                 //console.log(transactions);
                 break;
             }
-            case RunMode.Import: {
-                await makeImport(context);
-                break;
-            }
             case RunMode.ReadSheets: {
                 console.log('Reading sheets...');
                 const transactions = await readFromSheets(context);
@@ -72,7 +68,7 @@ async function run() {
                 console.log(transactions);
                 break;
             }
-            case RunMode.DryRun: {
+            case RunMode.Import: {
                 console.log('Doing a dry run...');
                 const transactions = await parseFile(context);
                 await compareToSheets(transactions, context);
