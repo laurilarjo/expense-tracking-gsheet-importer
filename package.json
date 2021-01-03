@@ -8,9 +8,10 @@
     "dev": "tsc -w",
     "build": "tsc",
     "start": "ts-node src/main.ts",
-    "read-sheets": "ts-node src/main.ts --mode=read-sheets",
-    "read-file": "ts-node src/main.ts --mode=read-file",
-    "import": "ts-node src/main.ts --mode=import"
+    "read-sheets": "ts-node src/main.ts --mode=ReadSheets",
+    "read-file": "ts-node src/main.ts --mode=ReadFile",
+    "import": "ts-node src/main.ts --mode=Import",
+    "login-to-sheets": "ts-node src/main.ts --mode=LoginToSheets"
   },
   "dependencies": {
     "dotenv": "^8.2.0",

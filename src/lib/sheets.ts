@@ -268,4 +268,4 @@ function getSheetName(context: Context): string {
   return context.sheetName;
 }
 
-export {importToSheets, compareToSheets, readFromSheets};
+export {importToSheets, compareToSheets, readFromSheets, setupSheets };

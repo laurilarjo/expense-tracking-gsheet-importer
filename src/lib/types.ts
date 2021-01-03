@@ -20,6 +20,7 @@ export enum RunMode {
     Import,
     ReadFile,
     ReadSheets,
+    LoginToSheets,
 }
 
 export enum Bank {
@@ -27,11 +28,11 @@ export enum Bank {
     NordeaSWE,
     OP,
     Handelsbanken,
-    Norwegian
+    Norwegian,
 }
 export enum User {
     Lauri,
-    Becky
+    Becky,
 }
 
 export class Transaction {

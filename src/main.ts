@@ -2,7 +2,7 @@
 import {argv} from 'yargs';
 
 import { getContext, inquireImportRun } from './context';
-import { importToSheets, readFromSheets, compareToSheets } from './lib/sheets';
+import { importToSheets, readFromSheets, compareToSheets, setupSheets } from './lib/sheets';
 import { Transaction, Context, Bank, User, RunMode } from './lib/types';
 
 /** 
@@ -78,6 +78,11 @@ async function run() {
                     context.runMode = RunMode.Import;
                     makeImport(context);
                 }
+                break;
+            }
+            case RunMode.LoginToSheets: {
+                console.log('Logging in to sheets...');
+                setupSheets();
                 break;
             }
             default: {

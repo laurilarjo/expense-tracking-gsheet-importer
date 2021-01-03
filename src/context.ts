@@ -11,9 +11,8 @@ import { nordeaFiParse } from './parsers/nordea-fi-parse';
 import { nordeaSeParse } from './parsers/nordea-se-parse';
 import { handelsbankenParse } from './parsers/handelsbanken-parse';
 
-
 async function getContext(argv: any): Promise<Context> {
-    if (!argv.mode || !argv.file) {
+    if (!argv.mode) {
         return await inquireContext();
     } else {
         return await detectContextFromArguments(argv);
@@ -80,6 +79,13 @@ async function detectContextFromArguments(argv: any): Promise<Context> {
     const runMode = getEnumFromString(argv.mode, RunMode, 'RunMode');
     console.log('detected runmode: ' + RunMode[runMode]);
 
+    // Exceptional runmode which doesn't need any other context
+    if (runMode == RunMode.LoginToSheets) {
+        return {
+            ...{runMode}
+        } as Context;
+    }
+
     // Bank. Verify it's found in our Enum options.
     const bank = getEnumFromString(argv.bank, Bank, 'Bank');
     console.log('detected bank: ' + Bank[bank]);
@@ -114,11 +120,11 @@ async function detectContextFromArguments(argv: any): Promise<Context> {
 }
 
 function getEnumFromString<T>(value: string, enumObject: T, enumName: string): T[keyof T] {
-    const user = enumObject[value as keyof typeof enumObject];
-    if (user == undefined) {
+    const result = enumObject[value as keyof typeof enumObject];
+    if (result == undefined) {
         throw new Error(`Unsupported ${enumName} provided: ${value}`);
     }
-    return user;
+    return result;
 }
 
 function getSheetName(user: User, bank: Bank): string {
