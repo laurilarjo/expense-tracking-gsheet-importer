@@ -4,8 +4,8 @@
   "main": "app.js",
   "author": "Lauri Larjo, based on initial code by Wilhelm Törnroos",
   "license": "MIT",
-  "engines" : { 
-    "node" : ">=12.0" 
+  "engines": {
+    "node": ">=12.0"
   },
   "scripts": {
     "dev": "tsc -w",
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "dotenv": "^8.2.0",
-    "exchange-rates-as-promised": "1.0.4",
+    "exchange-rates-as-promised": "1.0.12",
     "googleapis": "^66.0.0",
     "inquirer": "^7.3.3",
     "jsdom": "^16.4.0",
