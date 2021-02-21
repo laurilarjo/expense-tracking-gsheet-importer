@@ -12,9 +12,7 @@ const requiredEnvs = [
     'SHEET_NAME_HANDELSBANKEN_LAURI',
     'SHEET_NAME_NORDEASWE_BECKY',
     'SHEET_NAME_NORDEAFI_BECKY',
-    'SHEET_NAME_OP_BECKY',
-    'FILE_DETECTION_NORDEA_LAURI',
-    'FILE_DETECTION_OP_LAURI'
+    'SHEET_NAME_OP_BECKY'
 ];
 
 const unsetEnvs = requiredEnvs.filter((env) => isUndefined(process.env[env]));
@@ -39,8 +37,6 @@ const config = {
     SHEET_NAME_NORDEASWE_BECKY: process.env.SHEET_NAME_NORDEASWE_BECKY || '',
     SHEET_NAME_NORDEAFI_BECKY: process.env.SHEET_NAME_NORDEAFI_BECKY || '',
     SHEET_NAME_OP_BECKY: process.env.SHEET_NAME_OP_BECKY || '',
-    FILE_DETECTION_NORDEA_LAURI: process.env.FILE_DETECTION_NORDEA_LAURI || '',
-    FILE_DETECTION_OP_LAURI: process.env.FILE_DETECTION_OP_LAURI || '',
   };
   
   export default config;
