@@ -1,33 +1,43 @@
 import moment = require('moment');
-import  { ExchangeRate, Currencies } from 'exchange-rates-as-promised';
+import axios from 'axios';
 
 let currencyMap: Map<string, number> = new Map();
 
+/**
+ * 
+ * @param amount amount to convert
+ * @param date date in format D/M/YYYY
+ * @returns 
+ */
 async function convertSEKToEur(amount: number, date: string): Promise<number> {
+        
+    const SEK = await fetchMonthRate(date, 'SEK');
 
-    const firstOfMonth: string = moment(date, 'D/M/YYYY').startOf('month').toString();
-    const found = currencyMap.get(firstOfMonth);
+    return Math.round((amount / SEK) * 100) / 100;
+}
+
+const fetchMonthRate = async (date: string, currency: string): Promise<number> => {
+    if (currency !== 'SEK') {
+        throw new Error('Non-supported currency:' + currency);
+    }
+    const firstOfMonthString = moment(date, 'D/M/YYYY').startOf('month').format('YYYY-MM-DD');
+    const found = currencyMap.get(firstOfMonthString);
     let SEK;
     if (!found) {
-        console.log(`Fetching SEK rate for date: ${firstOfMonth.toString()}`);
-        const exchangeRate = new ExchangeRate();
-        exchangeRate.setBaseCurrency(Currencies.EUR);
-        exchangeRate.setCurrencies([Currencies.SEK]);
-        exchangeRate.setDate(new Date(firstOfMonth));
-        const response = await exchangeRate.getRates();
-        SEK = response.rates.SEK;
-
+        console.log(`Fetching SEK rate for date: ${firstOfMonthString}`);
+        const response = await axios.get(`https://api.ratesapi.io/api/${firstOfMonthString}?base=EUR&symbols=SEK`);
+        SEK = response.data.rates.SEK;
         if (SEK && typeof(SEK) == 'number') {
-            currencyMap.set(firstOfMonth, SEK);
+            currencyMap.set(firstOfMonthString, SEK);
         }
         else {
-            throw new Error('Could not find exchange rate for SEK for ' + firstOfMonth);
+            throw new Error('Could not find exchange rate for SEK for ' + firstOfMonthString);
         }
-        console.log(`Rate fetched for SEK: ${SEK} for date: ${response.date}. Wanted for date: ${firstOfMonth.toString()}`);
+
     } else {
         SEK = found;
     }
-    return Math.round((amount / SEK) * 100) / 100;
+    return SEK;
 }
 
 export { convertSEKToEur };
