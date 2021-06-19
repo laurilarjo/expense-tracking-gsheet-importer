@@ -1,5 +1,6 @@
 import moment = require('moment');
 import axios from 'axios';
+import config from './config';
 
 let currencyMap: Map<string, number> = new Map();
 
@@ -25,7 +26,8 @@ const fetchMonthRate = async (date: string, currency: string): Promise<number> =
     let SEK;
     if (!found) {
         console.log(`Fetching SEK rate for date: ${firstOfMonthString}`);
-        const response = await axios.get(`https://api.ratesapi.io/api/${firstOfMonthString}?base=EUR&symbols=SEK`);
+        const response = await axios.get(`http://api.exchangeratesapi.io/v1/${firstOfMonthString}` +
+            `?access_key=${config.EXCHANGERATES_API_KEY}&base=EUR&symbols=SEK`);
         SEK = response.data.rates.SEK;
         if (SEK && typeof(SEK) == 'number') {
             currencyMap.set(firstOfMonthString, SEK);
