@@ -17,7 +17,7 @@
     "login-to-sheets": "ts-node src/main.ts --mode=LoginToSheets"
   },
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^0.21.2",
     "dotenv": "^8.2.0",
     "googleapis": "^66.0.0",
     "inquirer": "^7.3.3",
