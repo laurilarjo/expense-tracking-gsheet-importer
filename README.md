@@ -8,6 +8,8 @@ Parse Nordea TSV transaction files and import data to Google Sheets.
 
 1. Setup the .env for your users and sheets.
 
+onboarding is now better
+
 2. OPTIONAL. If you need exchange rates, create a free account to [https://exchangeratesapi.io/](https://exchangeratesapi.io/) and add access-key to .env.
  
 3. Possible commands to run: 
