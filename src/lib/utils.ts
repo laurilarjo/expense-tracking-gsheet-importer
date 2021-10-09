@@ -26,7 +26,7 @@ const fetchMonthRate = async (date: string, currency: string): Promise<number> =
     let SEK;
     if (!found) {
         console.log(`Fetching SEK rate for date: ${firstOfMonthString}`);
-        const response = await axios.get(`http://api.exchangeratesapi.io/v1/${firstOfMonthString}` +
+        const response = await axios.get<any>(`http://api.exchangeratesapi.io/v1/${firstOfMonthString}` +
             `?access_key=${config.EXCHANGERATES_API_KEY}&base=EUR&symbols=SEK`);
         SEK = response.data.rates.SEK;
         if (SEK && typeof(SEK) == 'number') {

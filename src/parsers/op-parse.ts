@@ -48,7 +48,6 @@ async function readTransactionsFromFile(filePath: string): Promise<Transaction[]
  * @returns 
  */
 function parseLine(row: string[]): Transaction {
-    let payment = {} as Transaction;
 
     /* Format of the rows:
     Header row
@@ -66,7 +65,8 @@ function parseLine(row: string[]): Transaction {
     9 - Viesti
     10 - Arkistointitunnus
     */
-    
+   
+    let payment = new Transaction();
     const date = moment(row[1]);
     payment.month = parseInt(date.format('MM'));
     payment.year = date.format('YYYY');

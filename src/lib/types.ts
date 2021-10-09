@@ -45,24 +45,10 @@ export class Transaction {
     transactionType: string;
     message: string;
 
-    constructor(props: {
-        month: number,
-        year: string,
-        date: string,
-        amount: number,
-        amountEur: number;
-        payee: string,
-        transactionType: string,
-        message: string,
-    }) {
-        this.month = props.month;
-        this.year = props.year;
-        this.date = props.date;
-        this.amount = props.amount || 0;
-        this.amountEur = props.amountEur || 0;
-        this.payee = props.payee;
-        this.transactionType = props.transactionType
-        this.message = props.message || '';
-    };
-    
+    constructor(props: Partial<Transaction> = {}) {
+        props.amount ?? 0;
+        props.amountEur ?? 0;
+        props.message ?? '';
+        Object.assign(this, props);
+    }; 
 }
