@@ -1,88 +1,90 @@
 /**
  * Reads OP Finland bank's transaction files in CSV format
  */
+
 import * as fs from 'fs';
-import * as readline from 'readline';
+import * as moment from 'moment';
+import * as csvParse from 'csv-parse';
 
 import config from '../lib/config';
 import { Transaction } from '../lib/types';
 
-
 async function readTransactionsFromFile(filePath: string): Promise<Transaction[]> {
     return new Promise((resolve, reject) => {
-        
+
         let transactions: Transaction[] = [];
-        let rowCounter = 0;
 
-        let stream = fs.createReadStream(filePath, {encoding: 'latin1'});
-        let rl = readline.createInterface({
-            input: stream
-        });
+        fs.createReadStream(filePath)
+            .pipe(csvParse({
+                delimiter: ';', 
+                bom: true,
+                from_line: 2
+            }))
+            .on('data', function(line: any) {
+                const transaction = parseLine(line);
+                console.log(JSON.stringify(transaction));
 
-        rl.on('line', (line) => {
-            rowCounter++;
-             // Row 1 is header row
-            if (rowCounter === 1) {
-                return;
-            }
-
-            const transaction = parseLine(line);
-
-            if (transaction) {
-                transactions.push(transaction);
-            }
-        }).on('close', () => {
-            if (transactions.length === 0) {
-                console.log('No transactions parsed!')
-            }
-            resolve(transactions);
-        }).on('error', err => {
-            reject(err);
-        })
+                if (transaction) {
+                    transactions.push(transaction);
+                }
+            })
+            .on('end', function() {
+                if (transactions.length === 0) {
+                    console.log('No transactions parsed!')
+                }
+                resolve(transactions);
+            })
+            .on('error', function(err) {
+                reject(err);
+            });
 
     });
 }
 
-function parseLine(line: string) {
-    if (line === '') {
-        return null;
-    }
-
-    const lineArr = line.split(';');
-    
-    // Header row
-    // 15.01.2019;15.01.2019;-5,65;"103";PALVELUMAKSU;"OSUUSPANKKI";;"0001234567";TILIASIOINNIN PALVELUMAKSUT AJALTA 1.11-30.11.2018   ;20190115/5 AL  /001031
-
-    // 0 - Kirjauspäivä
-    // 1 - Arvopäivä
-    // 2 - Määrä
-    // 3 - Laji
-    // 4 - Selitys
-    // 5 - Saaja/Maksaja
-    // 6 - Saajan tilinro
-    // 7 - Viite
-    // 8 - Viesti
-    // 9 - Arkistointitunnus
-    
-
+/**
+ * Parses one row to a Transaction object
+ * 
+ * @param row transaction details in an array
+ * @returns 
+ */
+function parseLine(row: string[]): Transaction {
     let payment = {} as Transaction;
-    const dateParts = lineArr[1].split('.');
-    payment.month = parseInt(dateParts[1]);
-    payment.year = dateParts[2];
-    payment.date = dateParts[0] + '/' + dateParts[1] + '/' + dateParts[2];
-    payment.transactionType = lineArr[4];
-    payment.payee = lineArr[5].replace(/"/g, '');
-    payment.message = lineArr[8];
-    payment.amount = parseFloat(lineArr[2].replace(',', '.'));
-    payment.amountEur = payment.amount;
 
-    return new Transaction(payment);
+    /* Format of the rows:
+    Header row
+    "2021-07-05";"2021-07-05"; 1700.00;"506";"TILISIIRTO";"NORDNET BANK AB";"";"";"";"Viesti: diipadaa";"20210705/5UTH01/023706"
+   
+    0 - Kirjauspäivä
+    1 - Arvopäivä
+    2 - Määrä
+    3 - Laji
+    4 - Selitys
+    5 - Saaja/Maksaja
+    6 - Saajan tilinro
+    7 - Saajan pankin BIC
+    8 - Viite
+    9 - Viesti
+    10 - Arkistointitunnus
+    */
+    
+    const date = moment(row[1]);
+    payment.month = parseInt(date.format('MM'));
+    payment.year = date.format('YYYY');
+    payment.date = date.format('DD/MM/YYYY');
+    payment.amount = parseFloat(row[2]);
+    payment.transactionType = row[4];
+    payment.payee = row[5];
+    payment.message = row[9];
+    
+    payment.amountEur = payment.amount;
+    return payment;
 }
 
 async function opParse(filePath: string): Promise<Transaction[]> {
 
     try {
         const transactions = await readTransactionsFromFile(filePath);
+
         if (config.LOG == 'debug') {
             console.log('OP-parse results:');
             console.log(transactions);
@@ -92,7 +94,6 @@ async function opParse(filePath: string): Promise<Transaction[]> {
         console.error(e);
         throw new Error(e);
     }
-
 }
 
-export {opParse};
+export { opParse };
