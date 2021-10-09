@@ -37,7 +37,7 @@ function parseLine(line: any): Transaction | null {
     // Merchant Category - message
     // Amount - amount
 
-    let payment = {} as Transaction;    
+    const payment = new Transaction();
     const date = xlsx.SSF.parse_date_code(line['TransactionDate']);
     payment.month = date.m;
     payment.year = `${date.y}`;
@@ -48,7 +48,7 @@ function parseLine(line: any): Transaction | null {
     payment.amount = line['Amount'];
     payment.amountEur = payment.amount;
 
-    return new Transaction(payment);
+    return payment;
 }
 
 async function norwegianParse(filePath: string): Promise<Transaction[]> {

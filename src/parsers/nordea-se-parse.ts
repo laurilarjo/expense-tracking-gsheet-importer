@@ -43,7 +43,7 @@ function parseLine(line: any): Transaction | null {
     // Transaktion - payee
     // Belopp - amount
 
-    let payment = {} as Transaction;
+    const payment = new Transaction();
     const date = moment(line['Datum'], 'YYYY-MM-DD');
     payment.month = parseInt(date.format('MM'));
     payment.year = date.format('YYYY');
@@ -53,7 +53,7 @@ function parseLine(line: any): Transaction | null {
     payment.message = '';
     payment.amount = parseFloat(line['Belopp'].replace('.', '').replace(',', '.'));
 
-    return new Transaction(payment);
+    return payment;
 }
 
 async function nordeaSeParse(filePath: string): Promise<Transaction[]> {

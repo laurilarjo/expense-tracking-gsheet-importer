@@ -54,7 +54,7 @@ function parseLine(line: any): Transaction | null {
     // Text - payee
     // Belopp - amount
 
-    let payment = {} as Transaction;    
+    const payment = new Transaction();
     const date = moment(line['Transaktionsdatum'], 'YYYY-MM-DD');
     payment.month = parseInt(date.format('MM'));
     payment.year = date.format('YYYY');
@@ -71,7 +71,7 @@ function parseLine(line: any): Transaction | null {
     }
     payment.amount = Math.round(payment.amount * 100) / 100;
 
-    return new Transaction(payment);
+    return payment;
 }
 
 async function handelsbankenParse(filePath: string): Promise<Transaction[]> {

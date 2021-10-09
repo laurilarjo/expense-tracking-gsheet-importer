@@ -64,7 +64,7 @@ function parseLine(line: string) {
     // 11 - Kortinnumero
     // 12 - Kuitti
 
-    let payment = {} as Transaction;    
+    const payment = new Transaction();
     const dateParts = lineArr[2].split('.');
     payment.month = parseInt(dateParts[1]);
     payment.year = dateParts[2];
@@ -75,7 +75,7 @@ function parseLine(line: string) {
     payment.amount = parseFloat(lineArr[3].replace(',', '.'));
     payment.amountEur = payment.amount;
 
-    return new Transaction(payment);
+    return payment;
 }
 
 async function nordeaFiParse(filePath: string): Promise<Transaction[]> {
