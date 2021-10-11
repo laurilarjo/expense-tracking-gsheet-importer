@@ -10,7 +10,7 @@ let currencyMap: Map<string, number> = new Map();
  * @param date date in format D/M/YYYY
  * @returns 
  */
-async function convertSEKToEur(amount: number, date: string): Promise<number> {
+export const convertSEKToEur = async (amount: number, date: string): Promise<number> => {
         
     const SEK = await fetchMonthRate(date, 'SEK');
 
@@ -41,5 +41,3 @@ const fetchMonthRate = async (date: string, currency: string): Promise<number> =
     }
     return SEK;
 }
-
-export { convertSEKToEur };

@@ -47,7 +47,7 @@ async function readTransactionsFromFile(filePath: string): Promise<Transaction[]
  * @param row transaction details in an array
  * @returns 
  */
-function parseLine(row: string[]): Transaction {
+function parseLine(row: string[]): Transaction | null {
 
     /* Format of the rows:
     Header row

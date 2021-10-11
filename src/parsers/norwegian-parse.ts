@@ -7,7 +7,7 @@ import config from '../lib/config';
 import { Transaction } from '../lib/types';
 
 
-async function readTransactionsFromFile(filePath: string): Promise<Transaction[]> {
+const readTransactionsFromFile = async (filePath: string): Promise<Transaction[]> => {
     
     console.log(filePath);
     
@@ -26,16 +26,21 @@ async function readTransactionsFromFile(filePath: string): Promise<Transaction[]
     return transactions as Transaction[];
 }
 
-function parseLine(line: any): Transaction | null {
+const parseLine = (line: any): Transaction | null => {
     if (!line) {
         return null;
     }
 
-    // TransactionDate - date
-    // Text - payee
-    // Type - transactionType
-    // Merchant Category - message
-    // Amount - amount
+    // TransactionDate -> date
+    // Text -> payee
+    // Type -> transactionType
+    // Merchant Category -> message
+    // Amount -> amount
+
+    // Skip, because these will be updated to "Osto" in upcoming exports
+    if (line['Type'] == 'Katevaraus') {
+        return null;
+    }
 
     const payment = new Transaction();
     const date = xlsx.SSF.parse_date_code(line['TransactionDate']);
@@ -44,14 +49,14 @@ function parseLine(line: any): Transaction | null {
     payment.date = `${date.d}/${date.m}/${date.y}`;
     payment.payee = line['Text'];
     payment.transactionType = line['Type'];
-    payment.message = line['Merchant Category'];
+    payment.message = line['Merchant Category'] || '';
     payment.amount = line['Amount'];
     payment.amountEur = payment.amount;
 
     return payment;
 }
 
-async function norwegianParse(filePath: string): Promise<Transaction[]> {
+export const norwegianParse = async (filePath: string): Promise<Transaction[]> => {
 
     try {
         const transactions = await readTransactionsFromFile(filePath);
@@ -66,5 +71,3 @@ async function norwegianParse(filePath: string): Promise<Transaction[]> {
     }
 
 }
-
-export { norwegianParse };
