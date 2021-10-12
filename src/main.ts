@@ -36,7 +36,6 @@ With NPM:
 }
 
 
-
 async function run() {
     let context = {} as Context;
     try {
@@ -49,7 +48,7 @@ async function run() {
     console.log('Detected context:');
     console.log(context);
     console.log('Bank detected as: ' + Bank[context.bank]);
-    console.log('User detected as: ' + User[context.user]);
+    console.log('User detected as: ' + context.user);
     console.log('Using parser: ' + (context.parser ? context.parser.name : null));
 
     try {

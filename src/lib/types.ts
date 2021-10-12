@@ -8,7 +8,7 @@ export interface CmdLineArguments {
 
 export interface Context {
     bank: Bank;
-    user: User;
+    user: string;
     filePath: string;
     runMode: RunMode;
     parser: Function;
@@ -31,9 +31,10 @@ export enum Bank {
     Norwegian,
     Binance,
 }
-export enum User {
-    Lauri,
-    Becky,
+
+export interface User {
+    name: string,
+    banks: string[]
 }
 
 export class Transaction {
