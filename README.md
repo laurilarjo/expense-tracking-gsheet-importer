@@ -36,6 +36,7 @@ Parse Nordea TSV transaction files and import data to Google Sheets.
 - [x] Bank detection from files won't work. Change to interactive console instead.
 - [x] Do not add Handelsbankens if message has a prefix "Prel "
 - [x] Do not add Norwegian's "Katevaraus" type
+- [ ] Add support to read Binance Card
 
 ## Nice to do
 - [x] Change currency exchange library to something newer. Current has dependencies to deprecated libs.

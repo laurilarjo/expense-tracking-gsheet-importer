@@ -29,7 +29,7 @@ async function readTransactionsFromFile(filePath: string): Promise<Transaction[]
     // I want oldest transactions to top
     transactions.sort((a, b) => {
         return (moment(a.date, 'D/M/YYYY') as any) - (moment(b.date, 'D/M/YYYY') as any);
-    })
+    });
 
     return transactions as Transaction[];
 }

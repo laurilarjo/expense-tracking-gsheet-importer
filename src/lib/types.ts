@@ -29,6 +29,7 @@ export enum Bank {
     OP,
     Handelsbanken,
     Norwegian,
+    Binance,
 }
 export enum User {
     Lauri,
