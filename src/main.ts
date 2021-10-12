@@ -42,6 +42,7 @@ async function run() {
     try {
         context = await getContext(argv);
     } catch (error) {
+        console.log(error);
         printInstructions();
         process.exit(0);
     }

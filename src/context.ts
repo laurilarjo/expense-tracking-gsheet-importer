@@ -10,6 +10,7 @@ import { opParse } from './parsers/op-parse';
 import { nordeaFiParse } from './parsers/nordea-fi-parse';
 import { nordeaSeParse } from './parsers/nordea-se-parse';
 import { handelsbankenParse } from './parsers/handelsbanken-parse';
+import { binanceParse } from './parsers/binance-parse';
 
 async function getContext(argv: any): Promise<Context> {
     if (!argv.mode) {
@@ -134,6 +135,8 @@ function getSheetName(user: User, bank: Bank): string {
         return config.SHEET_NAME_OP_LAURI;
     } else if (user == User.Lauri && bank == Bank.Norwegian) {
         return config.SHEET_NAME_NORWEGIAN_LAURI;
+    } else if (user == User.Lauri && bank == Bank.Binance) {
+        return config.SHEET_NAME_BINANCE_LAURI;
     } else if (user == User.Lauri && bank == Bank.Handelsbanken) {
         return config.SHEET_NAME_HANDELSBANKEN_LAURI;
     } else if (user == User.Becky && bank == Bank.NordeaSWE) {
@@ -159,6 +162,8 @@ function getParser(bank: Bank): Function {
             return norwegianParse;
         case Bank.Handelsbanken:
             return handelsbankenParse;
+        case Bank.Binance:
+            return binanceParse;
         default:
             throw new Error('Unsupported bank provided. No parser found!');
     }
