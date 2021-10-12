@@ -48,7 +48,7 @@ const parseLine = (line: any): Transaction | null => {
   payment.payee = line["Description"];
   payment.transactionType = "";
   payment.message = "";
-  payment.amount = line["Paid OUT (EUR)"];
+  payment.amount = parseFloat(line["Paid OUT (EUR)"]);
   payment.amountEur = payment.amount;
 
   return payment;

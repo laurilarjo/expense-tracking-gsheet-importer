@@ -1,0 +1,23 @@
+{
+    "spreadsheetId": "1F78PxLNPdAFrcS8XjPI_hTAyh4knTVqq8kd-8ilmDSA",
+    "users": [
+        {
+            "name": "Lauri",
+            "banks": [
+                "NordeaFI",
+                "Handelsbanken",
+                "OP",
+                "Norwegian",
+                "Binance"
+            ]
+        },
+        {
+            "name": "Becky",
+            "banks": [
+                "NordeaFI",
+                "NordeaSWE",
+                "OP"
+            ]
+        }
+    ]
+}

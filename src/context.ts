@@ -39,20 +39,19 @@ async function inquireImportRun(): Promise<boolean> {
 }
 
 async function inquireContext(): Promise<Context> {
-    let context = { user: User.Becky} as Context;
     console.log('Here we will ask user for input');
 
     const files = await getFilesInDir();
 
     const questions = [
         { type: 'list', name: 'file', message: 'Select File', choices: files },
-        { type: 'list', name: 'user', message: 'Choose User', choices: getEnumArray(User) },
+        { type: 'list', name: 'user', message: 'Choose User', choices: config.USERS.map(a => a.name) },
         { type: 'list', name: 'bank', message: 'Choose Bank', choices: getEnumArray(Bank) },
         { type: 'list', name: 'runMode', message: 'Select RunMode', choices: getEnumArray(RunMode) },
     ];
     const answers: CmdLineArguments = await inquirer.prompt(questions);
 
-    const user = getEnumFromString(answers.user, User, 'User');
+    const user = answers.user;
     const bank = getEnumFromString(answers.bank, Bank, 'Bank');
     const filePath = answers.file;
     const runMode = getEnumFromString(answers.runMode, RunMode, 'RunMode');
@@ -91,9 +90,9 @@ async function detectContextFromArguments(argv: any): Promise<Context> {
     const bank = getEnumFromString(argv.bank, Bank, 'Bank');
     console.log('detected bank: ' + Bank[bank]);
 
-    // User. Verify it's found in our Enum options.
-    const user = getEnumFromString(argv.user, User, 'User');
-    console.log('detected user: ' + User[user]);
+    // User
+    const user = argv.user;
+    console.log('detected user: ' + user);
 
     // Filepath. This is not validated at all.
     let filePath = null;
@@ -128,26 +127,8 @@ function getEnumFromString<T>(value: string, enumObject: T, enumName: string): T
     return result;
 }
 
-function getSheetName(user: User, bank: Bank): string {
-    if (user == User.Lauri && bank == Bank.NordeaFI) {
-        return config.SHEET_NAME_NORDEA_LAURI;
-    } else if (user == User.Lauri && bank == Bank.OP) {
-        return config.SHEET_NAME_OP_LAURI;
-    } else if (user == User.Lauri && bank == Bank.Norwegian) {
-        return config.SHEET_NAME_NORWEGIAN_LAURI;
-    } else if (user == User.Lauri && bank == Bank.Binance) {
-        return config.SHEET_NAME_BINANCE_LAURI;
-    } else if (user == User.Lauri && bank == Bank.Handelsbanken) {
-        return config.SHEET_NAME_HANDELSBANKEN_LAURI;
-    } else if (user == User.Becky && bank == Bank.NordeaSWE) {
-        return config.SHEET_NAME_NORDEASWE_BECKY;
-    } else if (user == User.Becky && bank == Bank.NordeaFI) {
-        return config.SHEET_NAME_NORDEAFI_BECKY;
-    } else if (user == User.Becky && bank == Bank.OP) {
-        return config.SHEET_NAME_OP_BECKY;
-    } else {
-        throw new Error('No sheet name found for current bank & user combo!');
-    }
+function getSheetName(user: string, bank: Bank): string {
+    return `${user} ${Bank[bank]}`;
 }
 
 function getParser(bank: Bank): Function {
