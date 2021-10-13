@@ -48,7 +48,7 @@ const parseLine = (line: any): Transaction | null => {
   payment.payee = line["Description"];
   payment.transactionType = "";
   payment.message = "";
-  payment.amount = parseFloat(line["Paid OUT (EUR)"]);
+  payment.amount = 0 - parseFloat(line["Paid OUT (EUR)"]); // it's not marked as negative in the xlsx
   payment.amountEur = payment.amount;
 
   return payment;
