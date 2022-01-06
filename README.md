@@ -1,5 +1,15 @@
 # Expense Tracking - Google Sheets importer
-Parse Nordea TSV transaction files and import data to Google Sheets.
+
+Parse different banks' transaction files and import data to Google Sheets.
+
+Bank parser support:
+
+* NordeaFinland, Old side (tsv-format)
+* OP (csv)
+* Bank Norwegian Credit Card (xlsx)
+* Binance Credit Card (xslx)
+* NordeaSweden (xls) with currency conversion
+* Handelsbanken Sweden (xls-html) with currency conversion
 
 ![Demo](docs/expense-tracker-demo.gif)
 
