@@ -71,7 +71,7 @@ function parseLine(row: string[]): Transaction | null {
     payment.month = parseInt(date.format('MM'));
     payment.year = date.format('YYYY');
     payment.date = date.format('DD/MM/YYYY');
-    payment.amount = parseFloat(row[2]);
+    payment.amount = parseFloat(row[2].replace(',', '.'));
     payment.transactionType = row[4];
     payment.payee = row[5];
     payment.message = row[9];
