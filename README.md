@@ -2,6 +2,11 @@
 Parse Nordea TSV transaction files and import data to Google Sheets.
 
 ![Demo](docs/expense-tracker-demo.gif)
+
+## Requirements
+
+* Install Node
+* Install Git
 ## Setup and 1st time use
 1. Clone this project to your machine. Run `npm install`.
 1. Make a copy of this sample sheet to your own account and use it as a base (header rows come from it): [https://docs.google.com/spreadsheets/d/1F78PxLNPdAFrcS8XjPI_hTAyh4knTVqq8kd-8ilmDSA/](https://docs.google.com/spreadsheets/d/1F78PxLNPdAFrcS8XjPI_hTAyh4knTVqq8kd-8ilmDSA/).
