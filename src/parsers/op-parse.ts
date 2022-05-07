@@ -4,7 +4,7 @@
 
 import * as fs from 'fs';
 import * as moment from 'moment';
-import * as csvParse from 'csv-parse';
+import { parse }  from 'csv-parse';
 
 import config from '../lib/config';
 import { Transaction } from '../lib/types';
@@ -15,7 +15,7 @@ async function readTransactionsFromFile(filePath: string): Promise<Transaction[]
         let transactions: Transaction[] = [];
 
         fs.createReadStream(filePath)
-            .pipe(csvParse({
+            .pipe(parse({
                 delimiter: ';', 
                 bom: true,
                 from_line: 2
