@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "module": "commonjs",
-        "outDir": "./built",
+        "outDir": "./dist",
         "allowJs": true,
         "target": "es2017",
         "allowUnusedLabels": true,

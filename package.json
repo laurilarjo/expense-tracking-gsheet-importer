@@ -8,9 +8,10 @@
     "node": ">=12.0"
   },
   "scripts": {
-    "dev": "tsc -w",
+    "dev": "ts-node src/main.ts",
+    "clean": "rimraf dist",
     "build": "tsc",
-    "start": "ts-node src/main.ts",
+    "start": "node dist/src/main.js",
     "read-sheets": "ts-node src/main.ts --mode=ReadSheets",
     "read-file": "ts-node src/main.ts --mode=ReadFile",
     "import": "ts-node src/main.ts --mode=Import",
@@ -35,6 +36,7 @@
     "@types/jsdom": "^16.2.13",
     "@types/lodash": "^4.14.175",
     "@types/node": "^16.10.3",
-    "@types/yargs": "^17.0.3"
+    "@types/yargs": "^17.0.3",
+    "rimraf": "^3.0.2"
   }
 }

@@ -153,11 +153,10 @@ function getParser(bank: Bank): Function {
 async function getFilesInDir(): Promise<string[]> {
     
     const readdir = util.promisify(fs.readdir);
-    const directoryPath = path.join(__dirname, '../.');
     let result: string[] = ['Nothing'];
 
     try {
-        const files = await readdir(directoryPath);
+        const files = await readdir('./');
         for (const file of files) {
             if (file.includes('.xls') || file.includes('.xlsx') || file.includes('.txt') || file.includes('.csv')) {
                 result.push(file);
@@ -165,7 +164,7 @@ async function getFilesInDir(): Promise<string[]> {
         };
         return result;
     } catch {
-        throw new Error('Error reading directory: ' + directoryPath);
+        throw new Error('Error reading current directory');
     }
 }
 
