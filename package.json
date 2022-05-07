@@ -5,7 +5,7 @@
   "author": "Lauri Larjo, based on initial code by Wilhelm Törnroos",
   "license": "MIT",
   "engines": {
-    "node": ">=12.0"
+    "node": ">=16.0"
   },
   "scripts": {
     "dev": "ts-node src/main.ts",
@@ -18,25 +18,25 @@
     "login-to-sheets": "ts-node src/main.ts --mode=LoginToSheets"
   },
   "dependencies": {
-    "axios": "^0.22.0",
-    "csv-parse": "^4.16.3",
-    "dotenv": "^10.0.0",
-    "googleapis": "^88.2.0",
-    "inquirer": "^8.2.0",
-    "jsdom": "^18.0.0",
+    "axios": "^0.27.2",
+    "csv-parse": "^5.0.4",
+    "dotenv": "^16.0.0",
+    "googleapis": "^100.0.0",
+    "inquirer": "^8.2.4",
+    "jsdom": "^19.0.0",
     "lodash": "^4.17.21",
-    "moment": "^2.29.2",
-    "ts-node": "^10.2.1",
-    "typescript": "^4.4.3",
-    "xlsx": "^0.17.2",
-    "yargs": "^17.2.1"
+    "moment": "^2.29.3",
+    "ts-node": "^10.7.0",
+    "typescript": "^4.6.4",
+    "xlsx": "^0.18.5",
+    "yargs": "^17.4.1"
   },
   "devDependencies": {
-    "@types/inquirer": "^8.1.3",
-    "@types/jsdom": "^16.2.13",
-    "@types/lodash": "^4.14.175",
-    "@types/node": "^16.10.3",
-    "@types/yargs": "^17.0.3",
+    "@types/inquirer": "^8.2.1",
+    "@types/jsdom": "^16.2.14",
+    "@types/lodash": "^4.14.182",
+    "@types/node": "^16.11.33",
+    "@types/yargs": "^17.0.10",
     "rimraf": "^3.0.2"
   }
 }
