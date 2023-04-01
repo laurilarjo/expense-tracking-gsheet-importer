@@ -77,4 +77,5 @@ token.json
 
 # Typescript
 built
+dist
 sheet-config.json

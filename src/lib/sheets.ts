@@ -182,7 +182,7 @@ async function updateToSheets(sheets: sheets_v4.Sheets, transactions: Transactio
     range: range,
     valueInputOption: 'RAW',
     requestBody: { 'values': body }
-  }, (err, res) => {
+  }, (err: Error, res) => {
     if (err) return console.log('The API returned an error: ' + err);
     
     console.log(res);
