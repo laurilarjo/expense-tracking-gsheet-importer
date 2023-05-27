@@ -1,18 +1,29 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+## NextJS version for Expense Tracker
 
 ## Getting Started
 
-First, run the development server:
+### Create and add SSL cert to your OSX keychain
 
+1. Run: 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+openssl req -x509 -out localhost.crt -keyout localhost.key \
+  -days 365 \
+  -newkey rsa:2048 -nodes -sha256 \
+  -subj '/CN=localhost' -extensions EXT -config <( \
+   printf "[dn]\nCN=localhost\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Follow the guide here: 
+https://medium.com/@greg.farrow1/nextjs-https-for-a-local-dev-server-98bb441eabd7
+
+
+### Run project
+
+```bash
+npm run devhttps
+```
+
+Open [https://localhost:3000](https://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
