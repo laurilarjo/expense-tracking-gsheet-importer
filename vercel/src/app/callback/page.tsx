@@ -1,11 +1,14 @@
-"use client";
+"use client"
 
-import { useEffect } from "react";
-import { OAUTH_CALLBACK_KEY } from "../../../config";
+import { useEffect } from "react"
+import { OAUTH_CALLBACK_KEY } from "../../../config"
+import { useRouter } from "next/navigation"
 
 const Callback = () => {
+  const router = useRouter()
+
   useEffect(() => {
-    const params = new URLSearchParams(location.hash.substring(1));
+    const params = new URLSearchParams(location.hash.substring(1))
 
     const oauthData = {
       state: params.get("state"),
@@ -13,13 +16,15 @@ const Callback = () => {
       tokenType: params.get("token_type"),
       expiresIn: params.get("expires_in"),
       scope: params.get("scope"),
-    };
+    }
 
-    console.dir(oauthData);
-    localStorage.setItem(OAUTH_CALLBACK_KEY, JSON.stringify(oauthData));
-  }, []);
+    console.dir(oauthData)
+    localStorage.setItem(OAUTH_CALLBACK_KEY, JSON.stringify(oauthData))
 
-  return <>foobar</>;
-};
+    router.replace("transactions")
+  }, [router])
 
-export default Callback;
+  return <div>Updating local storage with new data...</div>
+}
+
+export default Callback
