@@ -15,6 +15,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script src="https://apis.google.com/js/api.js"></script>
+        <script src="https://accounts.google.com/gsi/client"></script>
+      </head>
       <body className={inter.className}>{children}</body>
     </html>
   )
