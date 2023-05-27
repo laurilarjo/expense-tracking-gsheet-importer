@@ -1,5 +1,7 @@
 # Expense Tracking - Google Sheets importer
 
+Now with React
+
 Parse different banks' transaction files and import data to Google Sheets.
 
 Bank parser support:
