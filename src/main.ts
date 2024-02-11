@@ -4,6 +4,7 @@ import {argv} from 'yargs';
 import { getContext, inquireImportRun } from './context';
 import { importToSheets, readFromSheets, compareToSheets, setupSheets } from './lib/sheets';
 import { Transaction, Context, Bank, User, RunMode } from './lib/types';
+import { exportToXlsx } from './lib/exporter';
 
 /** 
  * How to run this?
@@ -58,7 +59,7 @@ async function run() {
                 console.log('');
                 const transactions = await parseFile(context);
                 console.log(`Found ${transactions.length} transactions.`);
-                //console.log(transactions);
+                exportToFile(transactions);
                 break;
             }
             case RunMode.ReadSheets: {
@@ -100,6 +101,11 @@ async function makeImport(context: Context) {
     console.log('Importing to sheets...');
     const transactions = await parseFile(context);
     await importToSheets(transactions, context);
+    console.log('');
+}
+
+async function exportToFile(transactions: Transaction[]) {
+    exportToXlsx(transactions, 'sheet-formatted-transactions.xlsx');
     console.log('');
 }
 
