@@ -7,6 +7,7 @@ import { Context, Bank, User, RunMode, CmdLineArguments } from './lib/types';
 import config from './lib/config';
 import { norwegianParse } from './parsers/norwegian-parse';
 import { opParse } from './parsers/op-parse';
+import { nordeaFiOldParse } from './parsers/nordea-fi-old-parse';
 import { nordeaFiParse } from './parsers/nordea-fi-parse';
 import { nordeaSeParse } from './parsers/nordea-se-parse';
 import { handelsbankenParse } from './parsers/handelsbanken-parse';

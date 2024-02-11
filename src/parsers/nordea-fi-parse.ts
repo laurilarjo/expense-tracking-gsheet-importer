@@ -1,80 +1,80 @@
 /**
- * Reads Nordea Finland bank's transaction files in TSV format
+ * Reads Nordea Finland bank's transaction files in CSV format (new bank service)
  */
+
 import * as fs from 'fs';
-import * as readline from 'readline';
+import * as moment from 'moment';
+import { parse }  from 'csv-parse';
 
 import config from '../lib/config';
 import { Transaction } from '../lib/types';
 
-
 async function readTransactionsFromFile(filePath: string): Promise<Transaction[]> {
     return new Promise((resolve, reject) => {
-        
+
         let transactions: Transaction[] = [];
-        let rowCounter = 0;
 
-        let stream = fs.createReadStream(filePath);
-        let rl = readline.createInterface({
-            input: stream
-        });
+        fs.createReadStream(filePath)
+            .pipe(parse({
+                delimiter: ';', 
+                bom: true,
+                from_line: 2
+            }))
+            .on('data', function(line: any) {
+                const transaction = parseLine(line);
+                console.log(JSON.stringify(transaction));
 
-        rl.on('line', (line) => {
-            rowCounter++;
-             // Row 1 is header with account number, row 2 is empty, row 3 is the header row
-            if (rowCounter === 1 || rowCounter === 3) {
-                return;
-            }
-
-            const transaction = parseLine(line);
-
-            if (transaction) {
-                transactions.push(transaction);
-            }
-        }).on('close', () => {
-            if (transactions.length === 0) {
-                console.log('No transactions parsed!')
-            }
-            resolve(transactions);
-        }).on('error', err => {
-            reject(err);
-        })
+                if (transaction) {
+                    transactions.push(transaction);
+                }
+            })
+            .on('end', function() {
+                if (transactions.length === 0) {
+                    console.log('No transactions parsed!')
+                }
+                resolve(transactions);
+            })
+            .on('error', function(err) {
+                reject(err);
+            });
 
     });
 }
 
-function parseLine(line: string) {
-    if (line === '') {
-        return null;
-    }
+/**
+ * Parses one row to a Transaction object
+ * 
+ * @param row transaction details in an array
+ * @returns 
+ */
+function parseLine(row: string[]): Transaction | null {
 
-    const lineArr = line.split('\t');
-
-    // 0 - Kirjauspäivä
-    // 1 - Arvopäivä
-    // 2 - Maksupäivä
-    // 3 - Määrä
-    // 4 - Saaja/Maksaja
-    // 5 - Tilinumero
-    // 6 - BIC
-    // 7 - Tapahtuma
-    // 8 - Viite
-    // 9 - Maksajan viite
-    // 10 - Viesti
-    // 11 - Kortinnumero
-    // 12 - Kuitti
-
-    const payment = new Transaction();
-    const dateParts = lineArr[2].split('.');
-    payment.month = parseInt(dateParts[1]);
-    payment.year = dateParts[2];
-    payment.date = dateParts[0] + '/' + dateParts[1] + '/' + dateParts[2];
-    payment.payee = lineArr[4];
-    payment.transactionType = lineArr[7];
-    payment.message = lineArr[10];
-    payment.amount = parseFloat(lineArr[3].replace(',', '.'));
+    /* Format of the rows:
+    Header row
+    2024/02/08;-63,00;FI49 2212 xxxx xxxx;;;Korkeasti koulutettujen;;EUR;
+    
+    0 - Kirjauspäivä
+    1 - Määrä
+    2 - Maksaja
+    3 - Maksunsaaja (usually empty)
+    4 - Nimi (usually empty)
+    5 - Otsikko (maksunsaaja)
+    6 - Viitenumero
+    7 - Valuutta
+    
+    */
+   
+    let payment = new Transaction();
+    const date = moment(row[0]);
+    payment.month = parseInt(date.format('MM'));
+    payment.year = date.format('YYYY');
+    payment.date = date.format('DD/MM/YYYY');
+    payment.amount = parseFloat(row[1].replace(',', '.'));
+    payment.transactionType = "";
+    payment.payee = row[5];
+    payment.message = row[6];
+    
     payment.amountEur = payment.amount;
-
     return payment;
 }
 
@@ -82,16 +82,17 @@ async function nordeaFiParse(filePath: string): Promise<Transaction[]> {
 
     try {
         const transactions = await readTransactionsFromFile(filePath);
+        const transactionCorrectOrder = transactions.slice().reverse();
+
         if (config.LOG == 'debug') {
-            console.log('Nordea-parse results:');
-            console.log(transactions);
+            console.log('NordeaFI-parse results:');
+            console.log(transactionCorrectOrder);
         }
-        return transactions;
+        return transactionCorrectOrder;
     } catch (e) {
         console.error(e);
         throw new Error(e);
     }
-
 }
 
-export {nordeaFiParse};
+export { nordeaFiParse };
