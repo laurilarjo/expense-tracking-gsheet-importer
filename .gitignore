@@ -74,6 +74,7 @@ typings/
 # Google Sheet credentials
 credentials.json
 token.json
+cypress.env.json
 
 # Typescript
 built
