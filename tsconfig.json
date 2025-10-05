@@ -1,17 +1,19 @@
 {
-    "compilerOptions": {
-        "module": "commonjs",
-        "outDir": "./dist",
-        "allowJs": true,
-        "lib": ["ES2021"],
-        "target": "ES2021",
-        "allowUnusedLabels": true,
-        "noImplicitAny": true,
-        "strictNullChecks": true,
-        "sourceMap": true,
-        "resolveJsonModule": true,
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
     },
-    "include": [
-        "./src/**/*"
-    ]
+    "noImplicitAny": false,
+    "noUnusedParameters": false,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "noUnusedLocals": false,
+    "strictNullChecks": false
+  }
 }
