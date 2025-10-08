@@ -46,6 +46,9 @@ export class GoogleSheetsService {
       console.log(`📊 PARSED TRANSACTIONS: ${transactions.length} transactions from file`);
       console.log(`📋 SHEET: ${context.sheetName} (${context.user} + ${context.bank})`);
       
+      // Validate transactions before processing
+      this.validateTransactions(transactions);
+      
       // Get existing data to avoid duplicates
       let existingTransactions: Transaction[] = [];
       let needsHeaders = false;
@@ -225,6 +228,46 @@ export class GoogleSheetsService {
     
     console.log(`🔍 DUPLICATE DETECTION RESULT: ${newTransactionsFiltered.length} new transactions after filtering`);
     return newTransactionsFiltered;
+  }
+
+  /**
+   * Validate that transactions have valid essential fields
+   * Throws an error if validation fails
+   */
+  private validateTransactions(transactions: Transaction[]): void {
+    if (!transactions || transactions.length === 0) {
+      return; // Empty transactions are handled elsewhere
+    }
+
+    const invalidTransactions: string[] = [];
+    
+    transactions.forEach((transaction, index) => {
+      const issues: string[] = [];
+      
+      // Check month (should be 1-12)
+      if (!transaction.month || transaction.month < 1 || transaction.month > 12) {
+        issues.push(`Invalid month: ${transaction.month}`);
+      }
+      
+      // Check year (should be reasonable range, e.g., 1900-2100)
+      if (!transaction.year || transaction.year < 1900 || transaction.year > 2100) {
+        issues.push(`Invalid year: ${transaction.year}`);
+      }
+      
+      // Check amount (should be a valid number)
+      if (transaction.amount === undefined || transaction.amount === null || isNaN(transaction.amount)) {
+        issues.push(`Invalid amount: ${transaction.amount}`);
+      }
+      
+      if (issues.length > 0) {
+        invalidTransactions.push(`Row ${index + 1}: ${issues.join(', ')}`);
+      }
+    });
+    
+    if (invalidTransactions.length > 0) {
+      const errorMessage = `Invalid transaction data detected. This might be the wrong bank file format.\n\nIssues found:\n${invalidTransactions.slice(0, 5).join('\n')}${invalidTransactions.length > 5 ? `\n... and ${invalidTransactions.length - 5} more issues` : ''}`;
+      throw new Error(errorMessage);
+    }
   }
 
   /**
