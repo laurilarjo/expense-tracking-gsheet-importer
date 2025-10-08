@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -10,57 +10,61 @@ import {
   CheckCircle, 
   AlertCircle, 
   Loader2, 
-  Eye, 
-  EyeOff, 
-  RefreshCw,
   Target,
   TrendingUp
 } from 'lucide-react';
 import { MLCategorizationService } from '../lib/services/ml-categorization-service';
 import { Transaction } from '../lib/types/transaction';
-import { CategorizationResult, CategorizationPrediction } from '../lib/types/categorization';
+import { CategorizationResult, CategorizationPrediction, ModelMetadata } from '../lib/types/categorization';
 
 interface CategorizationPredictorProps {
   transactions: Transaction[];
   onPredictionsUpdate?: (predictions: CategorizationPrediction[]) => void;
   onTransactionUpdate?: (updatedTransactions: Transaction[]) => void;
+  onUploadToSheets?: (categorizedTransactions: Transaction[]) => void;
+  isUploading?: boolean;
 }
 
 interface PredictionState {
   predictions: CategorizationPrediction[];
   isProcessing: boolean;
-  showAllPredictions: boolean;
-  confidenceThreshold: number;
 }
 
 export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = ({
   transactions,
   onPredictionsUpdate,
-  onTransactionUpdate
+  onTransactionUpdate,
+  onUploadToSheets,
+  isUploading = false
 }) => {
   const [state, setState] = useState<PredictionState>({
     predictions: [],
-    isProcessing: false,
-    showAllPredictions: false,
-    confidenceThreshold: 0.7
+    isProcessing: false
   });
 
-  const [modelMetadata, setModelMetadata] = useState<any>(null);
-  const mlService = new MLCategorizationService();
+  const [modelMetadata, setModelMetadata] = useState<ModelMetadata | null>(null);
+  const [isModelLoaded, setIsModelLoaded] = useState(false);
+  
+  const mlService = useMemo(() => new MLCategorizationService(), []);
 
-  useEffect(() => {
-    checkModelAvailability();
-  }, []);
-
-  const checkModelAvailability = async () => {
+  const checkModelAvailability = useCallback(async () => {
     const isAvailable = await mlService.loadModelFromIndexedDB();
     if (isAvailable) {
       setModelMetadata(mlService.getModelMetadata());
+      setIsModelLoaded(true);
+      console.log('✅ Model loaded successfully in CategorizationPredictor');
+    } else {
+      setIsModelLoaded(false);
+      console.log('❌ No model found in IndexedDB');
     }
-  };
+  }, [mlService]);
+
+  useEffect(() => {
+    checkModelAvailability();
+  }, [checkModelAvailability]);
 
   const generatePredictions = async () => {
-    if (!mlService.isModelAvailable()) {
+    if (!isModelLoaded) {
       setState(prev => ({ 
         ...prev, 
         isProcessing: false 
@@ -114,38 +118,11 @@ export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = (
     }
   };
 
-  const handleCategoryOverride = (transactionIndex: number, newCategory: string) => {
-    const updatedPredictions = [...state.predictions];
-    updatedPredictions[transactionIndex] = {
-      ...updatedPredictions[transactionIndex],
-      result: {
-        ...updatedPredictions[transactionIndex].result,
-        category: newCategory,
-        confidence: 1.0
-      },
-      isManualOverride: true
-    };
-
-    setState(prev => ({ ...prev, predictions: updatedPredictions }));
-
-    // Update the original transaction
-    const updatedTransactions = [...transactions];
-    updatedTransactions[transactionIndex] = {
-      ...updatedTransactions[transactionIndex],
-      category: newCategory,
-      predictedCategory: newCategory,
-      categoryConfidence: 1.0
-    };
-
-    if (onTransactionUpdate) {
-      onTransactionUpdate(updatedTransactions);
-    }
-  };
 
   const applyAllPredictions = () => {
     const updatedTransactions = transactions.map((transaction, index) => {
       const prediction = state.predictions[index];
-      if (prediction && prediction.result.confidence >= state.confidenceThreshold) {
+      if (prediction && prediction.result.confidence >= 0.8) {
         return {
           ...transaction,
           category: prediction.result.category,
@@ -153,11 +130,49 @@ export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = (
           categoryConfidence: prediction.result.confidence
         };
       }
-      return transaction;
+      // For low confidence predictions, leave category empty
+      return {
+        ...transaction,
+        category: undefined,
+        predictedCategory: undefined,
+        categoryConfidence: undefined
+      };
     });
 
     if (onTransactionUpdate) {
       onTransactionUpdate(updatedTransactions);
+    }
+  };
+
+  const handleUploadWithCategorization = () => {
+    // Apply categories to transactions
+    const categorizedTransactions = transactions.map((transaction, index) => {
+      const prediction = state.predictions[index];
+      if (prediction && prediction.result.confidence >= 0.8) {
+        return {
+          ...transaction,
+          category: prediction.result.category,
+          predictedCategory: prediction.result.category,
+          categoryConfidence: prediction.result.confidence
+        };
+      }
+      // For low confidence predictions, leave category empty
+      return {
+        ...transaction,
+        category: undefined,
+        predictedCategory: undefined,
+        categoryConfidence: undefined
+      };
+    });
+
+    // Update the transactions with categories
+    if (onTransactionUpdate) {
+      onTransactionUpdate(categorizedTransactions);
+    }
+    
+    // Upload with the categorized transactions
+    if (onUploadToSheets) {
+      onUploadToSheets(categorizedTransactions);
     }
   };
 
@@ -173,15 +188,13 @@ export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = (
     return 'destructive';
   };
 
-  const filteredPredictions = state.showAllPredictions 
-    ? state.predictions 
-    : state.predictions.filter(p => p.result.confidence >= state.confidenceThreshold);
+  const filteredPredictions = state.predictions;
 
   const highConfidenceCount = state.predictions.filter(p => p.result.confidence >= 0.8).length;
   const mediumConfidenceCount = state.predictions.filter(p => p.result.confidence >= 0.6 && p.result.confidence < 0.8).length;
   const lowConfidenceCount = state.predictions.filter(p => p.result.confidence < 0.6).length;
 
-  if (!mlService.isModelAvailable()) {
+  if (!isModelLoaded) {
     return (
       <Card>
         <CardHeader>
@@ -245,56 +258,26 @@ export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = (
             </Button>
             
             {state.predictions.length > 0 && (
-              <>
-                <Button 
-                  onClick={() => setState(prev => ({ ...prev, showAllPredictions: !prev.showAllPredictions }))}
-                  variant="outline"
-                >
-                  {state.showAllPredictions ? (
-                    <>
-                      <EyeOff className="h-4 w-4 mr-2" />
-                      Hide Low Confidence
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="h-4 w-4 mr-2" />
-                      Show All Predictions
-                    </>
-                  )}
-                </Button>
-                
-                <Button 
-                  onClick={applyAllPredictions}
-                  variant="outline"
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Apply All High Confidence
-                </Button>
-              </>
+              <Button 
+                onClick={handleUploadWithCategorization}
+                disabled={isUploading}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Upload to Google Sheets
+                  </>
+                )}
+              </Button>
             )}
           </div>
 
-          {/* Confidence Threshold Slider */}
-          {state.predictions.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Confidence Threshold: {Math.round(state.confidenceThreshold * 100)}%
-              </label>
-              <input
-                type="range"
-                min="0.1"
-                max="1.0"
-                step="0.1"
-                value={state.confidenceThreshold}
-                onChange={(e) => setState(prev => ({ 
-                  ...prev, 
-                  confidenceThreshold: parseFloat(e.target.value) 
-                }))}
-                className="w-full"
-              />
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -319,7 +302,7 @@ export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = (
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-red-600">{lowConfidenceCount}</div>
-                <div className="text-sm text-muted-foreground">Low Confidence (under 60%)</div>
+                <div className="text-sm text-muted-foreground">Low Confidence (&lt;60%)</div>
               </div>
             </div>
           </CardContent>
@@ -345,75 +328,43 @@ export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = (
               const result = prediction.result;
               
               return (
-                <div key={originalIndex} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <div className="font-medium">{transaction.payee}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {transaction.date} • {transaction.amountEur.toFixed(2)} €
+                <div key={originalIndex} className="border rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium truncate">{transaction.payee}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {transaction.date} • {transaction.amountEur.toFixed(2)} €
+                        </span>
                       </div>
                       {transaction.message && (
-                        <div className="text-sm text-muted-foreground italic">
+                        <div className="text-xs text-muted-foreground truncate">
                           "{transaction.message}"
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={getConfidenceBadgeVariant(result.confidence)}>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Badge variant={getConfidenceBadgeVariant(result.confidence)} className="text-xs">
                         {Math.round(result.confidence * 100)}%
                       </Badge>
-                      {prediction.isManualOverride && (
-                        <Badge variant="outline" className="text-xs">
-                          Manual
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium">Predicted Category:</span>
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
                         {result.category}
                       </Badge>
                     </div>
-
-                    {result.alternatives.length > 0 && (
-                      <div className="space-y-1">
-                        <span className="text-sm font-medium">Alternatives:</span>
-                        <div className="flex flex-wrap gap-1">
-                          {result.alternatives.map((alt, altIndex) => (
-                            <Badge key={altIndex} variant="outline" className="text-xs">
-                              {alt.category} ({Math.round(alt.confidence * 100)}%)
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleCategoryOverride(originalIndex, result.category)}
-                        disabled={prediction.isManualOverride}
-                      >
-                        Accept
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          const newCategory = prompt('Enter new category:', result.category);
-                          if (newCategory) {
-                            handleCategoryOverride(originalIndex, newCategory);
-                          }
-                        }}
-                      >
-                        Override
-                      </Button>
-                    </div>
                   </div>
+
+                  {result.alternatives.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground">Alternatives:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {result.alternatives.slice(0, 2).map((alt, altIndex) => (
+                          <Badge key={altIndex} variant="outline" className="text-xs">
+                            {alt.category} ({Math.round(alt.confidence * 100)}%)
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

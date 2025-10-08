@@ -124,7 +124,7 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
   };
 
   // Proceed with upload to Google Sheets after categorization
-  const proceedWithUpload = async () => {
+  const proceedWithUpload = async (categorizedTransactions?: Transaction[]) => {
     if (!selectedUser || !settings.googleSheetsId) {
       onUploadError("No user selected or Google Sheets not configured");
       return;
@@ -150,9 +150,12 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
       
       console.log('📋 Sheet context:', context);
       
+      // Use categorized transactions if provided, otherwise use parsed transactions
+      const transactionsToUpload = categorizedTransactions || parsedTransactions;
+      
       // Import to Google Sheets
       const uploadResult = await sheetsService.importToSheets(
-        parsedTransactions, 
+        transactionsToUpload, 
         context, 
         settings.googleSheetsId, 
         token
@@ -170,7 +173,7 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
       
       // Check if upload was successful
       if (uploadResult.success) {
-        console.log(`Successfully uploaded ${parsedTransactions.length} transactions to Google Sheets`);
+        console.log(`Successfully uploaded ${transactionsToUpload.length} transactions to Google Sheets`);
         setUploadComplete(prev => ({ ...prev, [currentBankKey]: true }));
         onUploadSuccess(`File for ${currentBankKey}`, BANK_CONFIG[currentBankKey as Bank]?.name || 'Unknown Bank');
       } else {
@@ -328,6 +331,8 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
             transactions={parsedTransactions}
             onPredictionsUpdate={handlePredictionsUpdate}
             onTransactionUpdate={handleTransactionUpdate}
+            onUploadToSheets={proceedWithUpload}
+            isUploading={isUploading[currentBankKey]}
           />
 
           <div className="flex justify-center gap-4">
@@ -337,23 +342,6 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
               disabled={isUploading[currentBankKey]}
             >
               Skip Categorization & Upload
-            </Button>
-            <Button
-              onClick={proceedWithUpload}
-              disabled={isUploading[currentBankKey]}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isUploading[currentBankKey] ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload to Google Sheets
-                </>
-              )}
             </Button>
           </div>
         </div>
