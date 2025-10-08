@@ -1,6 +1,6 @@
 export class Transaction {
   month: number;
-  year: string;
+  year: number;
   date: string; // format is DD/MM/YYYY
   amount: number;
   amountEur: number;
@@ -13,7 +13,7 @@ export class Transaction {
     this.amountEur = props.amountEur ?? 0;
     this.message = props.message ?? '';
     this.month = props.month ?? 0;
-    this.year = props.year ?? '';
+    this.year = props.year ?? 0;
     this.date = props.date ?? '';
     this.payee = props.payee ?? '';
     this.transactionType = props.transactionType ?? '';

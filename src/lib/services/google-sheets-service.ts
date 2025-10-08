@@ -250,13 +250,23 @@ export class GoogleSheetsService {
 
     // Compare normalized values
     const monthEqual = normalizeNumber(t1.month) === normalizeNumber(t2.month);
-    const yearEqual = normalizeString(t1.year) === normalizeString(t2.year);
+    const yearEqual = normalizeNumber(t1.year) === normalizeNumber(t2.year);
     const dateEqual = normalizeString(t1.date) === normalizeString(t2.date);
     const amountEqual = normalizeAmount(t1.amount) === normalizeAmount(t2.amount);
     const amountEurEqual = normalizeAmount(t1.amountEur) === normalizeAmount(t2.amountEur);
     const payeeEqual = normalizeString(t1.payee) === normalizeString(t2.payee);
-    const transactionTypeEqual = normalizeString(t1.transactionType) === normalizeString(t2.transactionType);
-    const messageEqual = normalizeString(t1.message) === normalizeString(t2.message);
+    // Special handling for transactionType field - normalize empty states
+    const normalizeTransactionType = (type: string): string => {
+      const normalized = normalizeString(type);
+      return normalized === '' || normalized === 'undefined' || normalized === 'null' ? '' : normalized;
+    };
+    const transactionTypeEqual = normalizeTransactionType(t1.transactionType) === normalizeTransactionType(t2.transactionType);
+    // Special handling for message field - normalize empty states
+    const normalizeMessage = (msg: string): string => {
+      const normalized = normalizeString(msg);
+      return normalized === '' || normalized === 'undefined' || normalized === 'null' ? '' : normalized;
+    };
+    const messageEqual = normalizeMessage(t1.message) === normalizeMessage(t2.message);
     
     const isEqual = monthEqual && yearEqual && dateEqual && amountEqual && amountEurEqual && payeeEqual && transactionTypeEqual && messageEqual;
     
@@ -271,8 +281,36 @@ export class GoogleSheetsService {
         amount: { t1: t1.amount, t2: t2.amount, equal: amountEqual },
         amountEur: { t1: t1.amountEur, t2: t2.amountEur, equal: amountEurEqual },
         payee: { t1: t1.payee, t2: t2.payee, equal: payeeEqual },
-        transactionType: { t1: t1.transactionType, t2: t2.transactionType, equal: transactionTypeEqual },
-        message: { t1: `"${t1.message}"`, t2: `"${t2.message}"`, equal: messageEqual, normalized: { t1: `"${normalizeString(t1.message)}"`, t2: `"${normalizeString(t2.message)}"` } }
+        transactionType: { 
+          t1: `"${t1.transactionType}"`, 
+          t2: `"${t2.transactionType}"`, 
+          equal: transactionTypeEqual,
+          normalized: { 
+            t1: `"${normalizeTransactionType(t1.transactionType)}"`, 
+            t2: `"${normalizeTransactionType(t2.transactionType)}"` 
+          },
+          raw: {
+            t1: t1.transactionType,
+            t2: t2.transactionType,
+            t1Type: typeof t1.transactionType,
+            t2Type: typeof t2.transactionType
+          }
+        },
+        message: { 
+          t1: `"${t1.message}"`, 
+          t2: `"${t2.message}"`, 
+          equal: messageEqual, 
+          normalized: { 
+            t1: `"${normalizeMessage(t1.message)}"`, 
+            t2: `"${normalizeMessage(t2.message)}"` 
+          },
+          raw: {
+            t1: t1.message,
+            t2: t2.message,
+            t1Type: typeof t1.message,
+            t2Type: typeof t2.message
+          }
+        }
       });
     }
     
@@ -319,7 +357,7 @@ export class GoogleSheetsService {
         try {
           return new Transaction({
             month: parseInt(String(row[0])) || 0,
-            year: String(row[1]) || '',
+            year: parseInt(String(row[1])) || 0,
             date: String(row[2]) || '',
             amount: parseFloat(String(row[3])) || 0,
             amountEur: parseFloat(String(row[4])) || 0,

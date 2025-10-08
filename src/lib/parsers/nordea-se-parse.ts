@@ -91,7 +91,7 @@ function parseLine(line: Record<string, unknown>): Transaction | null {
     // Parse the date
     const date = dayjs(line['Datum'], 'YYYY-MM-DD');
     payment.month = date.month() + 1; // dayjs months are 0-based
-    payment.year = date.format('YYYY');
+    payment.year = date.year();
     payment.date = date.format('DD/MM/YYYY');
     payment.payee = line['Transaktion'] || '';
     payment.transactionType = '';

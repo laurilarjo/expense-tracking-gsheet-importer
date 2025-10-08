@@ -70,7 +70,7 @@ function parseLine(row: string[]): Transaction | null {
     const date = dayjs(row[0]); // Use booking date (Kirjauspäivä)
     
     payment.month = date.month() + 1; // dayjs months are 0-based
-    payment.year = date.format('YYYY');
+    payment.year = date.year(); // Now a number
     payment.date = date.format('DD/MM/YYYY');
     payment.amount = parseFloat(row[1].replace(',', '.'));
     payment.transactionType = ""; // Nordea FI doesn't have a specific transaction type field

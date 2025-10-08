@@ -70,7 +70,7 @@ function parseLine(row: string[]): Transaction | null {
     const date = dayjs(row[1]); // Use value date (Arvopäivä)
     
     payment.month = date.month() + 1; // dayjs months are 0-based
-    payment.year = date.format('YYYY');
+    payment.year = date.year();
     payment.date = date.format('DD/MM/YYYY');
     payment.amount = parseFloat(row[2].replace(',', '.'));
     payment.transactionType = row[4];

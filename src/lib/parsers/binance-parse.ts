@@ -88,7 +88,7 @@ function parseLine(line: Record<string, unknown>): Transaction | null {
     const transactionDate = dayjs(timestamp);
     
     payment.month = transactionDate.month() + 1; // dayjs months are 0-based
-    payment.year = transactionDate.format('YYYY');
+    payment.year = transactionDate.year();
     payment.date = transactionDate.format('DD/MM/YYYY');
     payment.payee = line['Description'] || '';
     payment.transactionType = '';
