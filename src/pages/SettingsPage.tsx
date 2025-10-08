@@ -3,6 +3,7 @@ import { SettingsProvider } from '@/contexts/SettingsContext';
 import { GoogleSheetsConfig } from '@/components/Settings/GoogleSheetsConfig';
 import { UserManager } from '@/components/Settings/UserManager';
 import { ExchangeRateConfig } from '@/components/Settings/ExchangeRateConfig';
+import { CategorizationTrainer } from '@/components/CategorizationTrainer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { NavigationBar } from '@/components/NavigationBar';
 import { Settings, Users, FileSpreadsheet } from 'lucide-react';
@@ -80,6 +81,22 @@ const SettingsPageContent: React.FC = () => {
             </p>
           </div>
           <UserManager />
+        </Card>
+
+        {/* ML Categorization Training */}
+        <Card className="w-full p-6 space-y-6 shadow-lg animate-fade-in">
+          <div className="space-y-2 text-center">
+            <h2 className="text-2xl font-bold tracking-tighter">ML Categorization Training</h2>
+            <p className="text-muted-foreground">
+              Train a machine learning model to automatically categorize your transactions.
+            </p>
+          </div>
+          <CategorizationTrainer 
+            accessToken={localStorage.getItem("google_sheets_token") ? JSON.parse(localStorage.getItem("google_sheets_token")!).token : ""}
+            onTrainingComplete={(metadata) => {
+              console.log('ML model training completed:', metadata);
+            }}
+          />
         </Card>
         </div>
       </div>

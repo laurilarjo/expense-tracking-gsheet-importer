@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Upload, File, CheckCircle2, Building2, User, BarChart3, Calendar, Euro, User as UserIcon, Tag } from "lucide-react";
+import { Upload, File, CheckCircle2, Building2, User, BarChart3, Calendar, Euro, User as UserIcon, Tag, Brain, Loader2 } from "lucide-react";
 import { parseOPFile } from "@/lib/parsers/op-parse";
 import { parseNordeaFiFile } from "@/lib/parsers/nordea-fi-parse";
 import { parseNordeaSeFile } from "@/lib/parsers/nordea-se-parse";
@@ -14,6 +14,9 @@ import { BankLogo } from "@/components/BankLogo";
 import { useSettings } from "@/contexts/SettingsContext";
 import { GoogleSheetsService } from "@/lib/services/google-sheets-service";
 import { UploadSummary } from "@/lib/types/upload-result";
+import { CategorizationPredictor } from "@/components/CategorizationPredictor";
+import { Transaction } from "@/lib/types/transaction";
+import { CategorizationPrediction } from "@/lib/types/categorization";
 
 interface MultiBankFileUploadProps {
   onUploadSuccess: (fileName: string, bankName: string) => void;
@@ -26,6 +29,12 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
   const [isUploading, setIsUploading] = useState<{ [key: string]: boolean }>({});
   const [uploadComplete, setUploadComplete] = useState<{ [key: string]: boolean }>({});
   const [uploadSummaries, setUploadSummaries] = useState<UploadSummary[]>([]);
+  
+  // Categorization state
+  const [parsedTransactions, setParsedTransactions] = useState<Transaction[]>([]);
+  const [showCategorization, setShowCategorization] = useState(false);
+  const [currentBankKey, setCurrentBankKey] = useState<string>('');
+  const [categorizationPredictions, setCategorizationPredictions] = useState<CategorizationPrediction[]>([]);
   
   // Get the currently selected user
   const selectedUser = settings.users.find(user => user.id === settings.lastSelectedUser);
@@ -91,73 +100,99 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
         return;
       }
         
-        // Upload to Google Sheets if user is selected and Google Sheets is configured
-        if (selectedUser && settings.googleSheetsId) {
-          try {
-            setUploadProgress(prev => ({ ...prev, [bankKey]: 75 }));
-            
-            console.log('📊 Using Google Sheets ID:', settings.googleSheetsId);
-            
-            // Get access token
-            const tokenData = localStorage.getItem("google_sheets_token");
-            if (!tokenData) {
-              throw new Error("No Google Sheets access token found. Please authorize first.");
-            }
-            
-            const { token } = JSON.parse(tokenData);
-            
-            // Create context for sheets operation
-            const sheetsService = GoogleSheetsService.getInstance();
-            const context = sheetsService.createContext(bankKey as Bank, selectedUser.name);
-            
-            console.log('📋 Sheet context:', context);
-            
-            // Import to Google Sheets
-            const uploadResult = await sheetsService.importToSheets(
-              transactions, 
-              context, 
-              settings.googleSheetsId, 
-              token
-            );
-            
-            // Store upload summary
-            const summary: UploadSummary = {
-              fileName: file.name,
-              bankName: `${selectedUser.name} - ${bankInfo.name}`,
-              result: uploadResult,
-              timestamp: new Date()
-            };
-            
-            setUploadSummaries(prev => [...prev, summary]);
-            
-            // Check if upload was successful
-            if (uploadResult.success) {
-              console.log(`Successfully uploaded ${transactions.length} transactions to Google Sheets`);
-            } else {
-              // Upload failed - show error message
-              const errorMessage = uploadResult.error || 'Unknown error occurred during upload';
-              onUploadError(`Failed to upload to Google Sheets: ${errorMessage}`);
-              setIsUploading(prev => ({ ...prev, [bankKey]: false }));
-              return;
-            }
-          } catch (sheetsError) {
-            console.error('Error uploading to Google Sheets:', sheetsError);
-            onUploadError(`Failed to upload to Google Sheets: ${sheetsError instanceof Error ? sheetsError.message : 'Unknown error'}`);
-            setIsUploading(prev => ({ ...prev, [bankKey]: false }));
-            return;
-          }
-        }
-        
+        // Store parsed transactions and show categorization step
+        setParsedTransactions(transactions);
+        setCurrentBankKey(bankKey);
+        setShowCategorization(true);
         setUploadProgress(prev => ({ ...prev, [bankKey]: 100 }));
-        setUploadComplete(prev => ({ ...prev, [bankKey]: true }));
         setIsUploading(prev => ({ ...prev, [bankKey]: false }));
-        onUploadSuccess(file.name, bankInfo.name);
     } catch (error) {
       console.error(`${bankInfo.name} parsing error:`, error);
       onUploadError(`Failed to parse ${bankInfo.name} file: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsUploading(prev => ({ ...prev, [bankKey]: false }));
     }
   }, [onUploadSuccess, onUploadError, selectedUser, settings.googleSheetsId]);
+
+  // Handle categorization predictions update
+  const handlePredictionsUpdate = (predictions: CategorizationPrediction[]) => {
+    setCategorizationPredictions(predictions);
+  };
+
+  // Handle transaction updates from categorization
+  const handleTransactionUpdate = (updatedTransactions: Transaction[]) => {
+    setParsedTransactions(updatedTransactions);
+  };
+
+  // Proceed with upload to Google Sheets after categorization
+  const proceedWithUpload = async () => {
+    if (!selectedUser || !settings.googleSheetsId) {
+      onUploadError("No user selected or Google Sheets not configured");
+      return;
+    }
+
+    try {
+      setIsUploading(prev => ({ ...prev, [currentBankKey]: true }));
+      setUploadProgress(prev => ({ ...prev, [currentBankKey]: 75 }));
+      
+      console.log('📊 Using Google Sheets ID:', settings.googleSheetsId);
+      
+      // Get access token
+      const tokenData = localStorage.getItem("google_sheets_token");
+      if (!tokenData) {
+        throw new Error("No Google Sheets access token found. Please authorize first.");
+      }
+      
+      const { token } = JSON.parse(tokenData);
+      
+      // Create context for sheets operation
+      const sheetsService = GoogleSheetsService.getInstance();
+      const context = sheetsService.createContext(currentBankKey as Bank, selectedUser.name);
+      
+      console.log('📋 Sheet context:', context);
+      
+      // Import to Google Sheets
+      const uploadResult = await sheetsService.importToSheets(
+        parsedTransactions, 
+        context, 
+        settings.googleSheetsId, 
+        token
+      );
+      
+      // Store upload summary
+      const summary: UploadSummary = {
+        fileName: `File for ${currentBankKey}`,
+        bankName: `${selectedUser.name} - ${BANK_CONFIG[currentBankKey as Bank]?.name}`,
+        result: uploadResult,
+        timestamp: new Date()
+      };
+      
+      setUploadSummaries(prev => [...prev, summary]);
+      
+      // Check if upload was successful
+      if (uploadResult.success) {
+        console.log(`Successfully uploaded ${parsedTransactions.length} transactions to Google Sheets`);
+        setUploadComplete(prev => ({ ...prev, [currentBankKey]: true }));
+        onUploadSuccess(`File for ${currentBankKey}`, BANK_CONFIG[currentBankKey as Bank]?.name || 'Unknown Bank');
+      } else {
+        // Upload failed - show error message
+        const errorMessage = uploadResult.error || 'Unknown error occurred during upload';
+        onUploadError(`Failed to upload to Google Sheets: ${errorMessage}`);
+      }
+    } catch (sheetsError) {
+      console.error('Error uploading to Google Sheets:', sheetsError);
+      onUploadError(`Failed to upload to Google Sheets: ${sheetsError instanceof Error ? sheetsError.message : 'Unknown error'}`);
+    } finally {
+      setIsUploading(prev => ({ ...prev, [currentBankKey]: false }));
+      setShowCategorization(false);
+      setParsedTransactions([]);
+      setCategorizationPredictions([]);
+    }
+  };
+
+  // Skip categorization and proceed directly
+  const skipCategorization = async () => {
+    await proceedWithUpload();
+  };
 
 
   const CreateDropzone = ({ bankKey, bankInfo }: { bankKey: string; bankInfo: { name: string; fileTypes: string[] } }) => {
@@ -273,6 +308,54 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
           <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
           <p>No user selected</p>
           <p className="text-sm">Please select a user to see available bank uploads</p>
+        </div>
+      )}
+
+      {/* Categorization Step */}
+      {showCategorization && parsedTransactions.length > 0 && (
+        <div className="space-y-6 mt-8">
+          <div className="text-center">
+            <h3 className="text-xl font-semibold flex items-center justify-center gap-2">
+              <Brain className="h-6 w-6" />
+              Transaction Categorization
+            </h3>
+            <p className="text-muted-foreground">
+              Review and categorize your {parsedTransactions.length} transactions before uploading to Google Sheets
+            </p>
+          </div>
+
+          <CategorizationPredictor
+            transactions={parsedTransactions}
+            onPredictionsUpdate={handlePredictionsUpdate}
+            onTransactionUpdate={handleTransactionUpdate}
+          />
+
+          <div className="flex justify-center gap-4">
+            <Button
+              onClick={skipCategorization}
+              variant="outline"
+              disabled={isUploading[currentBankKey]}
+            >
+              Skip Categorization & Upload
+            </Button>
+            <Button
+              onClick={proceedWithUpload}
+              disabled={isUploading[currentBankKey]}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isUploading[currentBankKey] ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload to Google Sheets
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       )}
 
