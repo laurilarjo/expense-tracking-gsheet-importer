@@ -148,7 +148,7 @@ export class GoogleSheetsService {
       const data = await response.json();
       const rows = data.values || [];
       
-      return this.mapRowsToTransactions(rows);
+      return this.mapRowsToTransactions(rows, sheetName);
     } catch (error) {
       console.error('Error reading from sheets:', error);
       // Re-throw the error instead of returning empty array
@@ -373,7 +373,7 @@ export class GoogleSheetsService {
       transaction.payee,
       transaction.transactionType,
       transaction.message,
-      '' // Empty Category column for user to fill manually
+      transaction.category || '' // Include category if available
     ]);
   }
 
@@ -381,7 +381,7 @@ export class GoogleSheetsService {
    * Convert rows from Google Sheets to transactions
    * Handles headers by detecting and skipping them
    */
-  private mapRowsToTransactions(rows: (string | number)[][]): Transaction[] {
+  private mapRowsToTransactions(rows: (string | number)[][], sheetName?: string): Transaction[] {
     if (!rows || rows.length === 0) {
       return [];
     }
@@ -393,8 +393,9 @@ export class GoogleSheetsService {
     // Skip header row if detected
     const dataRows = hasHeaders ? rows.slice(1) : rows;
     
-    console.log(`📋 HEADER DETECTION: ${hasHeaders ? 'Headers detected, skipping first row' : 'No headers detected'}`);
-    console.log(`📊 PROCESSING: ${dataRows.length} data rows from ${rows.length} total rows`);
+    const sheetInfo = sheetName ? `[${sheetName}] ` : '';
+    console.log(`📋 HEADER DETECTION ${sheetInfo}: ${hasHeaders ? 'Headers detected, skipping first row' : 'No headers detected'}`);
+    console.log(`📊 PROCESSING ${sheetInfo}: ${dataRows.length} data rows from ${rows.length} total rows`);
     
       return dataRows.map(row => {
         try {
@@ -406,8 +407,8 @@ export class GoogleSheetsService {
             amountEur: parseFloat(String(row[4])) || 0,
             payee: String(row[5]) || '',
             transactionType: String(row[6]) || '',
-            message: this.safeString(row[7])
-            // Note: Category column (row[8]) is ignored when reading transactions
+            message: this.safeString(row[7]),
+            category: this.safeString(row[8]) || undefined
           });
         } catch (error) {
           console.warn('⚠️  Skipping invalid row:', row, error);
@@ -528,5 +529,140 @@ export class GoogleSheetsService {
       user: userName,
       sheetName: generateSheetName(userName, bank)
     };
+  }
+
+  /**
+   * Parse Google Sheets URL to extract spreadsheet ID
+   */
+  parseGoogleSheetsUrl(url: string): string | null {
+    try {
+      const urlObj = new URL(url);
+      if (urlObj.hostname !== 'docs.google.com') {
+        throw new Error('Invalid Google Sheets URL');
+      }
+      
+      const pathMatch = urlObj.pathname.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+      if (!pathMatch) {
+        throw new Error('Could not extract spreadsheet ID from URL');
+      }
+      
+      return pathMatch[1];
+    } catch (error) {
+      console.error('Error parsing Google Sheets URL:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Validate access to a Google Sheets URL
+   */
+  async validateGoogleSheetsAccess(url: string, accessToken: string): Promise<boolean> {
+    try {
+      const spreadsheetId = this.parseGoogleSheetsUrl(url);
+      if (!spreadsheetId) {
+        return false;
+      }
+
+      const response = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?access_token=${accessToken}`
+      );
+      
+      return response.ok;
+    } catch (error) {
+      console.error('Error validating Google Sheets access:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get historical transactions with categories from a specific Google Sheets
+   */
+  async getHistoricalTransactionsWithCategories(
+    url: string,
+    accessToken: string,
+    validSheetNames?: string[]
+  ): Promise<Transaction[]> {
+    try {
+      const spreadsheetId = this.parseGoogleSheetsUrl(url);
+      if (!spreadsheetId) {
+        throw new Error('Invalid Google Sheets URL');
+      }
+
+      // Get all sheet names first
+      const sheetsResponse = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?access_token=${accessToken}`
+      );
+      
+      if (!sheetsResponse.ok) {
+        throw new Error('Failed to access spreadsheet');
+      }
+
+      const sheetsData = await sheetsResponse.json();
+      const allSheetNames = sheetsData.sheets?.map((sheet: { properties: { title: string } }) => sheet.properties.title) || [];
+      
+      // Filter to only valid sheet names if provided
+      const sheetNamesToRead = validSheetNames 
+        ? allSheetNames.filter(sheetName => validSheetNames.includes(sheetName))
+        : allSheetNames;
+      
+      console.log(`📊 Reading ${sheetNamesToRead.length} sheets: ${sheetNamesToRead.join(', ')}`);
+      
+      // Fetch data from filtered sheets and combine
+      const allTransactions: Transaction[] = [];
+      
+      for (const sheetName of sheetNamesToRead) {
+        try {
+          const transactions = await this.getDataFromSheets(spreadsheetId, sheetName, accessToken);
+          allTransactions.push(...transactions);
+          console.log(`📈 Read ${transactions.length} transactions from sheet: ${sheetName}`);
+        } catch (error) {
+          console.warn(`Failed to read sheet ${sheetName}:`, error);
+        }
+      }
+
+      // Filter transactions that have categories
+      const categorizedTransactions = allTransactions.filter(transaction => 
+        transaction.category && transaction.category.trim() !== ''
+      );
+      
+      console.log(`🏷️  Found ${categorizedTransactions.length} transactions with categories out of ${allTransactions.length} total`);
+      
+      return categorizedTransactions;
+    } catch (error) {
+      console.error('Error fetching historical transactions:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch transactions from multiple Google Sheets and combine them
+   */
+  async fetchTransactionsFromMultipleSheets(
+    urls: string[],
+    accessToken: string,
+    validSheetNames?: string[]
+  ): Promise<Transaction[]> {
+    const allTransactions: Transaction[] = [];
+    const seenTransactions = new Set<string>();
+
+    for (const url of urls) {
+      try {
+        const transactions = await this.getHistoricalTransactionsWithCategories(url, accessToken, validSheetNames);
+        
+        // Deduplicate based on transaction signature
+        for (const transaction of transactions) {
+          const signature = `${transaction.date}-${transaction.amount}-${transaction.payee}`;
+          if (!seenTransactions.has(signature)) {
+            seenTransactions.add(signature);
+            allTransactions.push(transaction);
+          }
+        }
+      } catch (error) {
+        console.error(`Failed to fetch from ${url}:`, error);
+        throw error;
+      }
+    }
+
+    return allTransactions;
   }
 }

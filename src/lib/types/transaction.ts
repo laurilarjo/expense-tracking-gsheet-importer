@@ -7,6 +7,9 @@ export class Transaction {
   payee: string;
   transactionType: string;
   message: string;
+  category?: string;
+  predictedCategory?: string;
+  categoryConfidence?: number;
 
   constructor(props: Partial<Transaction> = {}) {
     this.amount = props.amount ?? 0;
