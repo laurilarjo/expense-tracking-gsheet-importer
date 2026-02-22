@@ -252,7 +252,7 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
           {settings.users.map((user) => (
             <Button
               key={user.id}
-              variant={settings.lastSelectedUser === user.id ? "default" : "outline"}
+              variant={settings.lastSelectedUser === user.id ? "default" : "outline-solid"}
               size="sm"
               onClick={() => setLastSelectedUser(user.id)}
             >
