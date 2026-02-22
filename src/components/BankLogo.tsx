@@ -10,6 +10,7 @@ export const BankLogo: React.FC<BankLogoProps> = ({ bank, className = "h-10 w-10
   const getLogoPath = (bank: Bank): string => {
     switch (bank) {
       case Bank.OP:
+      case Bank.OP_CREDIT_CARD:
         return '/bank-logos/op.png';
       case Bank.NORDEA_FI:
         return '/bank-logos/nordea.png';

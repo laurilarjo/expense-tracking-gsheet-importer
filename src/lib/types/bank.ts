@@ -2,6 +2,7 @@ export enum Bank {
   NORDEA_FI = 'nordea-fi',
   NORDEA_SE = 'nordea-se',
   OP = 'op',
+  OP_CREDIT_CARD = 'op-credit-card',
   HANDELSBANKEN = 'handelsbanken',
   NORWEGIAN = 'norwegian',
   BINANCE = 'binance'
@@ -37,6 +38,13 @@ export const BANK_CONFIG: Record<Bank, BankInfo> = {
     sheetName: 'OP',
     fileTypes: ['.csv'],
     delimiter: ','
+  },
+  [Bank.OP_CREDIT_CARD]: {
+    id: Bank.OP_CREDIT_CARD,
+    name: 'OP Credit Card',
+    sheetName: 'OPCreditCard',
+    fileTypes: ['.xml'],
+    delimiter: null
   },
   [Bank.HANDELSBANKEN]: {
     id: Bank.HANDELSBANKEN,
