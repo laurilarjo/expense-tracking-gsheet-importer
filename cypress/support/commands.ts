@@ -1,6 +1,45 @@
 
 /// <reference types="cypress" />
 
+/**
+ * Bypass Firebase auth by setting a dev-mode user in localStorage.
+ * Only works when the app is run in development (NODE_ENV !== 'production').
+ * Use this in beforeEach so tests hit the app without the login page.
+ */
+Cypress.Commands.add('loginByDevMode', (email = 'cypress@example.com') => {
+  const devModeUser = {
+    uid: `cypress-${Date.now()}`,
+    email,
+    displayName: `Cypress User (${email})`,
+    photoURL: 'https://via.placeholder.com/150',
+    emailVerified: true,
+    isDevMode: true,
+  };
+  cy.window().then((win) => {
+    win.localStorage.setItem('dev_mode_user', JSON.stringify(devModeUser));
+  });
+});
+
+/**
+ * Visit the app as an authenticated dev-mode user (bypasses Firebase/Google login).
+ * Run the app in dev mode (e.g. `npm run dev`) so NODE_ENV is development.
+ */
+Cypress.Commands.add('visitAsDevMode', (path = '/', email = 'cypress@example.com') => {
+  const devModeUser = {
+    uid: `cypress-${Date.now()}`,
+    email,
+    displayName: `Cypress User (${email})`,
+    photoURL: 'https://via.placeholder.com/150',
+    emailVerified: true,
+    isDevMode: true,
+  };
+  cy.visit(path, {
+    onBeforeLoad(win) {
+      win.localStorage.setItem('dev_mode_user', JSON.stringify(devModeUser));
+    },
+  });
+});
+
 Cypress.Commands.add('loginByGoogleApi', () => {
   cy.log('Logging in to Google')
   cy.request({
@@ -159,6 +198,8 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Cypress {
     interface Chainable {
+      loginByDevMode(email?: string): Chainable<void>
+      visitAsDevMode(path?: string, email?: string): Chainable<void>
       loginByGoogleApi(): Chainable<void>
       mockGoogleAuth(): Chainable<void>
       mockFirebaseAuth(): Chainable<void>

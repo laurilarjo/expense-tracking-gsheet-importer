@@ -1,23 +1,17 @@
-
+/**
+ * Google auth is bypassed in two ways:
+ * 1. App gate (Firebase): use visitAsDevMode() so the app sees a dev user (requires running app in dev mode: npm run dev).
+ * 2. Google Sheets token: use mockGoogleAuth() to set google_sheets_token and mock gapi/google (no real OAuth).
+ */
 describe('Google Sheets Authentication', () => {
   beforeEach(() => {
-    // Visit the page first to ensure window object is available
-    cy.visit('/');
-    
-    // Clear localStorage before each test
     cy.clearLocalStorage();
-    
-    // Set up Firebase auth mock first to prevent redirect to login
-    //cy.mockFirebaseAuth();
-    cy.loginByGoogleApi()
-    
-    // Reload the page after setting up the mocks to ensure auth state is recognized
-    cy.reload();
+    // Bypass Firebase: visit with dev-mode user so we're not redirected to /login (app must be run in dev mode)
+    cy.visitAsDevMode('/');
   });
 
   it('should allow users to authenticate with Google Sheets', () => {
-    // Verify initial state - we should see auth button
-    cy.loginByGoogleApi();
+    // We're already on the app (via visitAsDevMode). We should see the Sheets auth button until we mock auth.
     cy.contains('Authorize Google Sheets Access').should('be.visible');
     
     // Set up Google API mocks before clicking

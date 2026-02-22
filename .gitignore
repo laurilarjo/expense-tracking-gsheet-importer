@@ -80,3 +80,4 @@ cypress.env.json
 built
 dist
 sheet-config.json
+cypress/screenshots
