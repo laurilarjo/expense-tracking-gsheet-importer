@@ -1,0 +1,3 @@
+{
+  "buildCommand": "npm run test:run && npm run build"
+}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Finvoice Version="2.0">
+  <InvoiceDetails>
+    <InvoicingPeriodEndDate Format="CCYYMMDD">20260117</InvoicingPeriodEndDate>
+  </InvoiceDetails>
+  <SpecificationDetails>
+    <SpecificationFreeText>Tapahtumaerittely 18.12.2025 - 17.01.2026</SpecificationFreeText>
+    <SpecificationFreeText>17.12. Osto SUPERMARKET HELSINKI                                          305,33</SpecificationFreeText>
+    <SpecificationFreeText>18.12. Osto SUPERMARKET HELSINKI                                           70,00</SpecificationFreeText>
+    <SpecificationFreeText>19.12. Osto S-kaupat HOK-Elanto HELSINKI                                   59,53</SpecificationFreeText>
+    <SpecificationFreeText>20.12. Osto VERKKOKAUPPA COM HELSINKI                                    1 299,00</SpecificationFreeText>
+    <SpecificationFreeText>                                                                      ----------</SpecificationFreeText>
+    <SpecificationFreeText>Tapahtumat yhteensa                                                     1 950,27</SpecificationFreeText>
+  </SpecificationDetails>
+</Finvoice>

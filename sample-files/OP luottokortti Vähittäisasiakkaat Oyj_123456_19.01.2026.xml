@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="ISO-8859-15"?>
+<?xml-stylesheet type='text/xsl' href='Finvoice.xsl'?>
+<Finvoice Version="2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="Finvoice.xsd">
+  <SellerPartyDetails>
+    <SellerPartyIdentifier>0751699-0</SellerPartyIdentifier>
+    <SellerOrganisationName>OP V�hitt�isasiakkaat Oyj</SellerOrganisationName>
+    <SellerOrganisationTaxCode>0751699-0</SellerOrganisationTaxCode>
+    <SellerOrganisationTaxCodeUrlText>http://europa.eu.int/comm/taxation_customs/vies/fi/vieshome.htm</SellerOrganisationTaxCodeUrlText>
+  </SellerPartyDetails>
+  <SellerOrganisationUnitNumber>0123456789</SellerOrganisationUnitNumber>
+  <SellerContactPersonName></SellerContactPersonName>
+  <SellerCommunicationDetails>
+    <SellerPhoneNumberIdentifier></SellerPhoneNumberIdentifier>
+    <SellerEmailaddressIdentifier></SellerEmailaddressIdentifier>
+  </SellerCommunicationDetails>
+  <SellerInformationDetails>
+    <SellerHomeTownName>Helsinki</SellerHomeTownName>
+    <SellerPhoneNumber>0100 0500</SellerPhoneNumber>
+    <SellerFaxNumber></SellerFaxNumber>
+    <SellerCommonEmailaddressIdentifier></SellerCommonEmailaddressIdentifier>
+    <SellerWebaddressIdentifier></SellerWebaddressIdentifier>
+    <SellerAccountDetails>
+      <SellerAccountID IdentificationSchemeName="IBAN">FI1234567890</SellerAccountID>
+      <SellerBic IdentificationSchemeName="BIC">OKOYFIHH</SellerBic>
+    </SellerAccountDetails>
+  </SellerInformationDetails>
+  <InvoiceRecipientPartyDetails>
+    <InvoiceRecipientPartyIdentifier></InvoiceRecipientPartyIdentifier>
+    <InvoiceRecipientOrganisationName>John Doe</InvoiceRecipientOrganisationName>
+    <InvoiceRecipientPostalAddressDetails>
+      <InvoiceRecipientStreetName>Laamannintie 2</InvoiceRecipientStreetName>
+      <InvoiceRecipientTownName>HELSINKI</InvoiceRecipientTownName>
+      <InvoiceRecipientPostCodeIdentifier>00500</InvoiceRecipientPostCodeIdentifier>
+      <InvoiceRecipientPostOfficeBoxIdentifier></InvoiceRecipientPostOfficeBoxIdentifier>
+    </InvoiceRecipientPostalAddressDetails>
+  </InvoiceRecipientPartyDetails>
+  <InvoiceRecipientOrganisationUnitNumber></InvoiceRecipientOrganisationUnitNumber>
+  <InvoiceRecipientContactPersonName/>
+  <InvoiceRecipientLanguageCode>FI</InvoiceRecipientLanguageCode>
+  <InvoiceRecipientCommunicationDetails>
+    <InvoiceRecipientPhoneNumberIdentifier/>
+    <InvoiceRecipientEmailaddressIdentifier></InvoiceRecipientEmailaddressIdentifier>
+  </InvoiceRecipientCommunicationDetails>
+  <BuyerPartyDetails>
+    <BuyerOrganisationName>John Doe</BuyerOrganisationName>
+    <BuyerOrganisationTaxCode></BuyerOrganisationTaxCode>
+    <BuyerPostalAddressDetails>
+      <BuyerStreetName>Laamannintie 2</BuyerStreetName>
+      <BuyerTownName>HELSINKI</BuyerTownName>
+      <BuyerPostCodeIdentifier>00500</BuyerPostCodeIdentifier>
+      <CountryCode>FI</CountryCode>
+    </BuyerPostalAddressDetails>
+  </BuyerPartyDetails>
+  <BuyerContactPersonName></BuyerContactPersonName>
+  <BuyerCommunicationDetails>
+    <BuyerPhoneNumberIdentifier/>
+    <BuyerEmailaddressIdentifier></BuyerEmailaddressIdentifier>
+  </BuyerCommunicationDetails>
+  <DeliveryDetails>
+    <DeliveryPeriodDetails>
+      <StartDate Format="CCYYMMDD">20251218</StartDate>
+      <EndDate Format="CCYYMMDD">20260117</EndDate>
+    </DeliveryPeriodDetails>
+    <DeliveryTermsText></DeliveryTermsText>
+  </DeliveryDetails>
+  <InvoiceDetails>
+    <InvoiceTypeCode>INV01</InvoiceTypeCode>
+    <InvoiceTypeText>LASKU</InvoiceTypeText>
+    <OriginCode>Original</OriginCode>
+    <InvoiceNumber>1234567890</InvoiceNumber>
+    <InvoiceDate Format="CCYYMMDD">20260117</InvoiceDate>
+    <InvoicingPeriodStartDate Format="CCYYMMDD">20251218</InvoicingPeriodStartDate>
+    <InvoicingPeriodEndDate Format="CCYYMMDD">20260117</InvoicingPeriodEndDate>
+    <SellerReferenceIdentifier>0751699-0</SellerReferenceIdentifier>
+    <OrderIdentifier></OrderIdentifier>
+    <AgreementIdentifier></AgreementIdentifier>
+    <DefinitionDetails>
+      <DefinitionHeaderText>Luottoraja</DefinitionHeaderText>
+      <DefinitionValue QuantityUnitCode="EUR">4 000,00</DefinitionValue>
+    </DefinitionDetails>
+    <DefinitionDetails>
+      <DefinitionHeaderText>Kuukausier� (% velkasaldosta)</DefinitionHeaderText>
+      <DefinitionValue QuantityUnitCode="%">100</DefinitionValue>
+    </DefinitionDetails>
+    <DefinitionDetails>
+      <DefinitionHeaderText>Luottokorko</DefinitionHeaderText>
+      <DefinitionValue QuantityUnitCode="%">11,007</DefinitionValue>
+    </DefinitionDetails>
+    <DefinitionDetails>
+      <DefinitionHeaderText>Er�p�iv�</DefinitionHeaderText>
+      <DefinitionValue QuantityUnitCode="">9.2.2026</DefinitionValue>
+    </DefinitionDetails>
+    <InvoiceTotalVatExcludedAmount AmountCurrencyIdentifier="EUR">1950,27</InvoiceTotalVatExcludedAmount>
+    <InvoiceTotalVatAmount AmountCurrencyIdentifier="EUR">0,00</InvoiceTotalVatAmount>
+    <InvoiceTotalVatIncludedAmount AmountCurrencyIdentifier="EUR">1950,27</InvoiceTotalVatIncludedAmount>
+    <PaymentTermsDetails>
+      <PaymentTermsFreeText>Er�p�iv�n mukaan</PaymentTermsFreeText>
+      <InvoiceDueDate Format="CCYYMMDD">20260209</InvoiceDueDate>
+    </PaymentTermsDetails>
+  </InvoiceDetails>
+  <PaymentStatusDetails>
+    <PaymentStatusCode>NOTPAID</PaymentStatusCode>
+  </PaymentStatusDetails>
+  <InvoiceRow>
+    <ArticleName>OP Gold</ArticleName>
+  </InvoiceRow>
+  <SpecificationDetails>
+    <SpecificationFreeText></SpecificationFreeText>
+    <SpecificationFreeText>Laskutuskausi 18.12.2025 - 17.01.2026</SpecificationFreeText>
+    <SpecificationFreeText></SpecificationFreeText>
+    <SpecificationFreeText>Velkasaldo edellisell� laskulla                                         1 003,10</SpecificationFreeText>
+    <SpecificationFreeText>Suoritus 07.01.                                                        -1 003,10</SpecificationFreeText>
+    <SpecificationFreeText>Laskutuskauden tapahtumat yhteens�                                      1 236,19</SpecificationFreeText>
+    <SpecificationFreeText>                                                                      ----------</SpecificationFreeText>
+    <SpecificationFreeText>Velkasaldo yhteens�                                                     1 236,19</SpecificationFreeText>
+    <SpecificationFreeText>                                                                      ----------</SpecificationFreeText>
+    <SpecificationFreeText>Maksettava v�hint��n                                                    1 236,19</SpecificationFreeText>
+    <SpecificationFreeText>--------------------------------------------------------------------------------</SpecificationFreeText>
+    <SpecificationFreeText></SpecificationFreeText>
+    <SpecificationFreeText>Tapahtumaerittely 18.12.2025 - 17.01.2026</SpecificationFreeText>
+    <SpecificationFreeText></SpecificationFreeText>
+    <SpecificationFreeText></SpecificationFreeText>
+    <SpecificationFreeText>4010 44** **** 1234 John Doe</SpecificationFreeText>
+    <SpecificationFreeText></SpecificationFreeText>
+    <SpecificationFreeText>17.12. Osto BILTEMA ESPOO                                                 100,00</SpecificationFreeText>
+    <SpecificationFreeText>18.12. Osto S-Kaupat PERKKAA ESPOO                                         70,00</SpecificationFreeText>
+    <SpecificationFreeText>19.12. Osto IKEA VANTAA IF CUSTOMER R VANTAA                               16,74</SpecificationFreeText>
+    <SpecificationFreeText>19.12. Osto PRISMA KANNELMAKI HELSINKI                                     22,95</SpecificationFreeText>
+    <SpecificationFreeText>20.12. Osto R-KIOSKI HELSINKI                                               6,29</SpecificationFreeText>
+    <SpecificationFreeText>21.12. Osto Itsudemo Kamppi Helsinki                                       65,40</SpecificationFreeText>
+    <SpecificationFreeText>24.12. Osto MÖKISÄHKÖ Kamppi Helsinki                                       600,00</SpecificationFreeText>
+    <SpecificationFreeText>05.01. Osto Zettle_*Bensalenkkarit Oy HELSINKI                              4,95</SpecificationFreeText>
+    <SpecificationFreeText>06.01. Osto LINDT &amp; SPRCNGL HELSINKI                                       90,00</SpecificationFreeText>
+    <SpecificationFreeText>06.01. Osto IKEA VANTAA HFB ECO VANTAA                                    186,77</SpecificationFreeText>
+    <SpecificationFreeText>13.01. Osto ST1 Espoo Olarinluoma ESPOO                                    73,09</SpecificationFreeText>
+    <SpecificationFreeText>                                                                      ----------</SpecificationFreeText>
+    <SpecificationFreeText>Tapahtumat yhteens�                                                     1 236,19</SpecificationFreeText>
+    <SpecificationFreeText>--------------------------------------------------------------------------------</SpecificationFreeText>
+    <SpecificationFreeText>KAIKKI TAPAHTUMAT YHTEENS�                                              1 236,19</SpecificationFreeText>
+    <SpecificationFreeText>--------------------------------------------------------------------------------</SpecificationFreeText>
+    <SpecificationFreeText>Askarruttaako jokin asia laskussa?</SpecificationFreeText>
+    <SpecificationFreeText>Olemme koonneet t�rkeimpi� kysymyksi� ja vastauksia luottokorttien</SpecificationFreeText>
+    <SpecificationFreeText>laskutuksesta omalle sivulleen. Lue lis��: op.fi/luottokorttilasku.</SpecificationFreeText>
+    <SpecificationFreeText>Kuukausier� lasketaan prosenttiosuutena laskutusp�iv�n velkasaldosta. Kun saldo</SpecificationFreeText>
+    <SpecificationFreeText>pienenee, my�s kuukausier� pienenee. Se on kuitenkin v�hint��n 30 euroa, paitsi</SpecificationFreeText>
+    <SpecificationFreeText>jos saldo on t�t� pienempi. Voit itse p��tt��, maksatko sovitun kuukauser�n,</SpecificationFreeText>
+    <SpecificationFreeText>koko velkasaldon vai jotain silt� v�lilt�.</SpecificationFreeText>
+    <SpecificationFreeText>Jos laskulla on tunnistamaton veloitus, ota v�litt�m�sti yhteytt�</SpecificationFreeText>
+    <SpecificationFreeText>asiakaspalveluun tai asiakaspalvelun aukioloaikojen ulkopuolella OP</SpecificationFreeText>
+    <SpecificationFreeText>sulkupalveluun. Otathan huomioon, ett� laskulla n�kyv� ostopaikka ei aina</SpecificationFreeText>
+    <SpecificationFreeText>vastaa sit� nime�, jolla yritys yleisesti tunnetaan tai joka lukee kuitissa.</SpecificationFreeText>
+    <SpecificationFreeText>Tee laskua koskevat huomautukset viimeist��n er�p�iv��n menness�. Lue lis��:</SpecificationFreeText>
+    <SpecificationFreeText>op.fi/korttireklamaatio.</SpecificationFreeText>
+  </SpecificationDetails>
+  <EpiDetails>
+    <EpiIdentificationDetails>
+      <EpiDate Format="CCYYMMDD">20260117</EpiDate>
+      <EpiReference>77600179032086</EpiReference>
+    </EpiIdentificationDetails>
+    <EpiPartyDetails>
+      <EpiBfiPartyDetails>
+        <EpiBfiIdentifier IdentificationSchemeName="BIC">OKOYFIHH</EpiBfiIdentifier>
+      </EpiBfiPartyDetails>
+      <EpiBeneficiaryPartyDetails>
+        <EpiNameAddressDetails>OP V�hitt�isasiakkaat Oyj</EpiNameAddressDetails>
+        <EpiBei>0751699-0</EpiBei>
+        <EpiAccountID IdentificationSchemeName="IBAN">FI1234567890</EpiAccountID>
+      </EpiBeneficiaryPartyDetails>
+    </EpiPartyDetails>
+    <EpiPaymentInstructionDetails>
+      <EpiPaymentInstructionId>Visa-Mastercard-lasku</EpiPaymentInstructionId>
+      <EpiRemittanceInfoIdentifier IdentificationSchemeName="SPY">1234567890</EpiRemittanceInfoIdentifier>
+      <EpiInstructedAmount AmountCurrencyIdentifier="EUR">1236,19</EpiInstructedAmount>
+      <EpiCharge ChargeOption="SHA">SHA</EpiCharge>
+      <EpiDateOptionDate Format="CCYYMMDD">20260209</EpiDateOptionDate>
+    </EpiPaymentInstructionDetails>
+  </EpiDetails>
+  <InvoiceUrlText>0123456789+CRE1234567890260117</InvoiceUrlText>
+</Finvoice>
