@@ -9,14 +9,43 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
+/**
+ * Extract spreadsheet ID from input.
+ * Accepts: raw ID, or full URL (with /edit, ?gid=..., #gid=... etc.).
+ */
+function normalizeSpreadsheetId(input: string): string {
+  const trimmed = input.trim();
+  if (!trimmed) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) {
+    try {
+      const pathname = new URL(trimmed).pathname;
+      const match = pathname.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+      if (match) return match[1];
+    } catch {
+      // fall through to regex on string
+    }
+  }
+  const pathMatch = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (pathMatch) return pathMatch[1];
+  return trimmed;
+}
+
+/** Extract sheet name from A1 range (e.g. "Sheet1!A1:E10" -> "Sheet1"). */
+function getSheetNameFromRange(range: string): string | null {
+  const trimmed = range.trim();
+  if (!trimmed.includes("!")) return null;
+  return trimmed.split("!")[0].trim() || null;
+}
+
 // Direct Google Sheets API function (no Firebase needed)
 const readGoogleSheetDirect = async (
   spreadsheetId: string,
   range: string,
   accessToken: string
 ): Promise<string[][]> => {
+  const id = normalizeSpreadsheetId(spreadsheetId);
   const response = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`,
+    `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${range}`,
     {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -81,10 +110,18 @@ export const GoogleSheetsReader = () => {
       });
     } catch (error: unknown) {
       console.error("Error reading sheet:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to read Google Sheet";
+      const rawMessage = error instanceof Error ? error.message : "Failed to read Google Sheet";
+      const sheetName = getSheetNameFromRange(range);
+      const isSheetNotFound =
+        rawMessage.includes("Unable to parse range") ||
+        (rawMessage.toLowerCase().includes("sheet") && rawMessage.toLowerCase().includes("not found"));
+      const description =
+        sheetName && isSheetNotFound
+          ? `Could not find the sheet named ${sheetName}`
+          : rawMessage;
       toast({
         title: "Error",
-        description: errorMessage,
+        description,
         variant: "destructive",
       });
     } finally {
@@ -105,12 +142,12 @@ export const GoogleSheetsReader = () => {
           <Label htmlFor="spreadsheet-id">Spreadsheet ID</Label>
           <Input
             id="spreadsheet-id"
-            placeholder="Enter spreadsheet ID"
+            placeholder="Paste full sheet URL or just the spreadsheet ID"
             value={spreadsheetId}
             onChange={(e) => setSpreadsheetId(e.target.value)}
           />
           <p className="text-xs text-gray-500">
-            Find this in your sheet URL: https://docs.google.com/spreadsheets/d/
+            Paste the full URL or the ID from: https://docs.google.com/spreadsheets/d/
             <span className="font-medium">SPREADSHEET_ID</span>/edit
           </p>
         </div>
