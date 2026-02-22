@@ -10,7 +10,7 @@ export const NavigationBar: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className="w-full bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+    <nav className="w-full bg-white/80 backdrop-blur-xs border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-2xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Home button - always on the left */}

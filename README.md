@@ -1,81 +1,65 @@
+# Expense Tracking - Google Sheets importer
 
-# Welcome to your Lovable project
+Parse different banks' transaction files and import data to Google Sheets.
 
-## Project info
+Bank parser support:
 
-**URL**: https://lovable.dev/projects/cff0dfae-a664-466f-83c3-c49ffdae5af3
+* NordeaFinland, Old side (tsv-format)
+* OP (csv)
+* Bank Norwegian Credit Card (xlsx)
+* Binance Credit Card (xslx)
+* NordeaSweden (xls) with currency conversion
+* Handelsbanken Sweden (xls-html) with currency conversion
 
-## How can I edit this code?
+## Hosting
 
-There are several ways of editing your application.
+Vercel: https://expense-tracking-gsheet-importer.vercel.app/
 
-**Use Lovable**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/cff0dfae-a664-466f-83c3-c49ffdae5af3) and start prompting.
 
-Changes made via Lovable will be committed automatically to this repo.
+## Requirements
 
-**Use your preferred IDE**
+* Install Git
+* Install Node
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Setup and 1st time use
+1. Clone this project to your machine. Run `npm install`.
+1. Make a copy of this sample sheet to your own account and use it as a base (header rows come from it): [https://docs.google.com/spreadsheets/d/1F78PxLNPdAFrcS8XjPI_hTAyh4knTVqq8kd-8ilmDSA/](https://docs.google.com/spreadsheets/d/1F78PxLNPdAFrcS8XjPI_hTAyh4knTVqq8kd-8ilmDSA/).
+1. Create and name the data sheets like this: If your name is `Aurelius` and your bank is `OP`, name the sheet `Aurelius OP`. You'll setup this in sheet-config next.
+1. Copy `sheet-config.json.sample` to `sheet-config.json`, and replace values with your own.
+1. Copy `.env.sample` to `.env`. You don't need to set any vars yet.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. Go here and complete the "prerequisites" section: [https://developers.google.com/sheets/api/quickstart/nodejs](https://developers.google.com/sheets/api/quickstart/nodejs).
+    1. Create a project in Google Cloud Platform
+    1. Go to "APIs and Services" and enable the Google Sheets API for it
+    1. Go to Credentials -section under the APIs and Services, and create OAuth 2 client ID credentials for a desktop app. Download the resulting json file, rename it to `credentials.json` and put to root of this project.
+    1. Go to OAuth Consent Screen -section under the APIs and Services, and add your gmail-account to a test user list.
+    1. Run the app with `npm start`. Select `Nothing`, then your user, and whatever bank. Last select `LoginToSheets`.
+    1. This should trigger OAuth flow. Follow instructions, and you end up with a `token.json` in your root folder. After this you can start using the app.
 
-Follow these steps:
+2. OPTIONAL. If you need exchange rates, create a free account to [https://exchangeratesapi.io/](https://exchangeratesapi.io/) and add access-key to .env.
+ 
+# Using the app
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+1. Get an export xls, csv, txt file from your bank, and drop it to the root of this project.
+1. Run app with `npm start`.
+1. First select the file you want to import, then your user, then your bank.
+1. Last select `Import` if you want to add transactions to GSheets. You can also dry-run by reading the sheet's current content, or read the file's content without making changes.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+## TODO
+- [x] Basic Read sheets
+- [x] Basic write transactions to sheets
+- [x] Read sheets and filter transactions based on it, so we don't add duplicate data
+- [x] Write data by appending to end of file
+- [x] Add support to read OP
+- [x] Add support to read Nordea Sweden
+- [x] Add support to read Handelsbanken Sweden
+- [x] Add support to read Norwegian (Finland)
+- [x] Bank detection from files won't work. Change to interactive console instead.
+- [x] Do not add Handelsbankens if message has a prefix "Prel "
+- [x] Do not add Norwegian's "Katevaraus" type
+- [x] Add support to read Binance Card
+- [x] Turn this into a hosted service.
+- [ ] Integrate Telegram bot which could upload the files.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-- React Router DOM
-- Tanstack React Query
-- Firebase Authentication
-- Google Sheets API Integration
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/cff0dfae-a664-466f-83c3-c49ffdae5af3) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-You can now deploy your Lovable projects to custom domains! Visit our docs for more details on how to set this up: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
-
-## Performance optimization
-
-This project template includes:
-- React StrictMode for development
-- Modern component architecture
-- Optimized build settings

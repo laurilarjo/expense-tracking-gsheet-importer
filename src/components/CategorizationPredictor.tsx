@@ -343,7 +343,7 @@ export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = (
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
                       <Badge variant={getConfidenceBadgeVariant(result.confidence)} className="text-xs">
                         {Math.round(result.confidence * 100)}%
                       </Badge>
