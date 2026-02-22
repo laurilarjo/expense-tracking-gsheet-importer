@@ -7,6 +7,7 @@ import { Bank } from '@/lib/types/bank';
 const AboutPage: React.FC = () => {
   const supportedBanks = [
     { bank: Bank.OP, name: 'OP Bank', tested: true },
+    { bank: Bank.OP_CREDIT_CARD, name: 'OP Credit Card', tested: true },
     { bank: Bank.NORDEA_FI, name: 'Nordea Finland', tested: true },
     { bank: Bank.NORWEGIAN, name: 'Norwegian Bank', tested: true },
     { bank: Bank.BINANCE, name: 'Binance', tested: false },

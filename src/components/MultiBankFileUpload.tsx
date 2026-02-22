@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Upload, File, CheckCircle2, Building2, User, BarChart3, Calendar, Euro, User as UserIcon, Tag, Brain, Loader2 } from "lucide-react";
 import { parseOPFile } from "@/lib/parsers/op-parse";
+import { parseOPCreditCardFile } from "@/lib/parsers/op-credit-card-parse";
 import { parseNordeaFiFile } from "@/lib/parsers/nordea-fi-parse";
 import { parseNordeaSeFile } from "@/lib/parsers/nordea-se-parse";
 import { parseNorwegianFile } from "@/lib/parsers/norwegian-parse";
@@ -80,6 +81,8 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
       let transactions;
       if (bankKey === Bank.OP) {
         transactions = await parseOPFile(file);
+      } else if (bankKey === Bank.OP_CREDIT_CARD) {
+        transactions = await parseOPCreditCardFile(file);
       } else if (bankKey === Bank.NORDEA_FI) {
         transactions = await parseNordeaFiFile(file);
       } else if (bankKey === Bank.NORDEA_SE) {
@@ -202,7 +205,10 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
       onDrop: (files) => onDrop(files, bankKey),
       accept: bankInfo.fileTypes.reduce((acc: Record<string, string[]>, ext: string) => {
-        const mimeType = ext === '.csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        const mimeType =
+          ext === '.csv' ? 'text/csv'
+          : ext === '.xml' ? 'application/xml'
+          : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
         acc[mimeType] = [ext];
         return acc;
       }, {}),
@@ -223,7 +229,7 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
           {uploadComplete[bankKey] ? (
             <CheckCircle2 className="h-10 w-10 text-green-500" />
           ) : (
-            <BankLogo bank={bankKey as Bank} className={bankKey === Bank.OP ? "h-16 w-16" : "h-26 w-26"} />
+            <BankLogo bank={bankKey as Bank} className={(bankKey === Bank.OP || bankKey === Bank.OP_CREDIT_CARD) ? "h-16 w-16" : "h-26 w-26"} />
           )}
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">

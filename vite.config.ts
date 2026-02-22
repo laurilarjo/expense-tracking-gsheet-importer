@@ -1,4 +1,4 @@
-
+/// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
@@ -15,9 +15,13 @@ export default defineConfig(({ mode }) => ({
     tailwindcss(),
   ].filter(Boolean),
   resolve: {
-    // Path aliases for imports - this replaces the need to configure it in tsconfig.json
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  test: {
+    globals: true,
+    environment: "jsdom",
+    include: ["src/**/*.{test,spec}.{ts,tsx}"],
   },
 }));
