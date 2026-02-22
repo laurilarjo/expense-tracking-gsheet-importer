@@ -25,6 +25,11 @@ const AboutPage: React.FC = () => {
             <p className="text-muted-foreground mt-2">
               Google Sheets Expense Tracker
             </p>
+            {typeof __BUILD_DATE__ !== 'undefined' && (
+              <p className="text-muted-foreground text-sm mt-1">
+                Last updated: {new Date(__BUILD_DATE__).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+              </p>
+            )}
           </div>
 
           {/* Privacy & Security */}
