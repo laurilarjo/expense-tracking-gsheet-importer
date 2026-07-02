@@ -2,6 +2,8 @@
 
 ## Cursor Cloud specific instructions
 
+**PR media policy:** This is a public repo. Do NOT embed or link videos/images (e.g. Cursor artifact links) in pull request titles or descriptions. Keep PR bodies text-only. Share walkthrough media in the agent chat/summary instead, not in the PR.
+
 This is a client-side React 19 + Vite + TypeScript SPA (a bank-transaction file parser that imports into Google Sheets). There is no backend service in this repo — everything runs in the browser. Auth (Firebase) and Google Sheets config are hardcoded/dev values; no `.env` is required to run the app.
 
 ### Services / commands
