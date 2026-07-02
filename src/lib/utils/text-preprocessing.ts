@@ -23,7 +23,7 @@ export function normalizeText(text: string): string {
     .toLowerCase()
     .trim()
     // Remove common special characters but keep spaces and basic punctuation
-    .replace(/[^\w\s\-\.]/g, ' ')
+    .replace(/[^\w\s\-.]/g, ' ')
     // Replace multiple spaces with single space
     .replace(/\s+/g, ' ')
     // Remove leading/trailing spaces
@@ -151,7 +151,7 @@ export function normalizeMultiLanguageText(text: string): string {
     // Remove numbers at the end (reference numbers)
     .replace(/\s+\d+$/, '')
     // Final cleanup
-    .replace(/[^\w\s\-\.]/g, ' ')
+    .replace(/[^\w\s\-.]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
