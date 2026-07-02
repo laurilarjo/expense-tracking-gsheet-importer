@@ -27,7 +27,7 @@ Vercel: https://expense-tracking-gsheet-importer.vercel.app/
 1. Make a copy of this sample sheet to your own account and use it as a base (header rows come from it): [https://docs.google.com/spreadsheets/d/1F78PxLNPdAFrcS8XjPI_hTAyh4knTVqq8kd-8ilmDSA/](https://docs.google.com/spreadsheets/d/1F78PxLNPdAFrcS8XjPI_hTAyh4knTVqq8kd-8ilmDSA/).
 1. Create and name the data sheets like this: If your name is `Aurelius` and your bank is `OP`, name the sheet `Aurelius OP`. You'll setup this in sheet-config next.
 1. Copy `sheet-config.json.sample` to `sheet-config.json`, and replace values with your own.
-1. Copy `.env.sample` to `.env`. You don't need to set any vars yet.
+1. Copy `.env.sample` to `.env` and fill in Firebase and Google Sheets API credentials (see Google Cloud setup below).
 
 1. Go here and complete the "prerequisites" section: [https://developers.google.com/sheets/api/quickstart/nodejs](https://developers.google.com/sheets/api/quickstart/nodejs).
     1. Create a project in Google Cloud Platform

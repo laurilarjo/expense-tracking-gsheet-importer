@@ -2,7 +2,7 @@
 
 ## Cursor Cloud specific instructions
 
-This is a client-side React 19 + Vite + TypeScript SPA (a bank-transaction file parser that imports into Google Sheets). There is no backend service in this repo — everything runs in the browser. Auth (Firebase) and Google Sheets config are hardcoded/dev values; no `.env` is required to run the app.
+This is a client-side React 19 + Vite + TypeScript SPA (a bank-transaction file parser that imports into Google Sheets). There is no backend service in this repo — everything runs in the browser. Firebase and Google Sheets credentials are loaded from environment variables. Copy `.env.sample` to `.env` before running the app or Cypress tests.
 
 ### Services / commands
 Standard scripts live in `package.json`. Key ones:
