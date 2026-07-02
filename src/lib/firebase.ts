@@ -2,16 +2,14 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
-// Firebase configuration
-// Note: These are development values. In a production environment,
-// you should use environment variables for these values.
+// Firebase configuration (from .env)
 const firebaseConfig = {
-  apiKey: "AIzaSyDBI1hjtEOufcGE4vuSh4gl1mOfUHTwm-Y",
-  authDomain: "expense-tracker-328619.firebaseapp.com",
-  projectId: "expense-tracker-328619",
-  storageBucket: "expense-tracker-328619.appspot.com", // Corrected from .firebasestorage.app
-  messagingSenderId: "800525699041",
-  appId: "1:800525699041:web:7c156dce25e6192c3c34a0"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 // Initialize Firebase

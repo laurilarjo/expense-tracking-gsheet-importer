@@ -1,10 +1,9 @@
 
 import { toast } from "@/hooks/use-toast";
 
-// Google Sheets API configuration
-// You can set these values directly for development, but use environment variables for production
-const API_KEY = "AIzaSyDBI1hjtEOufcGE4vuSh4gl1mOfUHTwm-Y"; 
-const CLIENT_ID = "800525699041-13u158c8kfnopeh91ti1avpnj8gb03aj.apps.googleusercontent.com";
+// Google Sheets API configuration (from .env)
+const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY ?? "";
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
 const DISCOVERY_DOCS = ["https://sheets.googleapis.com/$discovery/rest?version=v4"];
 const SCOPES = "https://www.googleapis.com/auth/spreadsheets";
 

@@ -141,7 +141,8 @@ Cypress.Commands.add('mockGoogleAuth', () => {
 // Improved Firebase auth mocking that sets the user in localStorage
 Cypress.Commands.add('mockFirebaseAuth', () => {
   // This approach properly mocks Firebase auth by setting localStorage state
-  localStorage.setItem('firebase:authUser:AIzaSyDBI1hjtEOufcGE4vuSh4gl1mOfUHTwm-Y:[DEFAULT]', 
+  const apiKey = Cypress.env('VITE_FIREBASE_API_KEY') ?? '';
+  localStorage.setItem(`firebase:authUser:${apiKey}:[DEFAULT]`, 
     JSON.stringify({
       uid: 'test-user-id',
       email: 'test@example.com',
