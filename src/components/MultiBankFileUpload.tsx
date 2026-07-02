@@ -114,7 +114,7 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
       onUploadError(`Failed to parse ${bankInfo.name} file: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsUploading(prev => ({ ...prev, [bankKey]: false }));
     }
-  }, [onUploadSuccess, onUploadError, selectedUser, settings.googleSheetsId]);
+  }, [onUploadSuccess, onUploadError]);
 
   // Handle categorization predictions update
   const handlePredictionsUpdate = (predictions: CategorizationPrediction[]) => {
