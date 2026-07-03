@@ -66,7 +66,10 @@ const fetchMonthRate = async (date: string, currency: string, apiKey?: string): 
       }
     } catch (error) {
       console.error('Error fetching exchange rate:', error);
-      throw new Error(`Failed to fetch exchange rate: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to fetch exchange rate: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
+      );
     }
   } else {
     SEK = found;

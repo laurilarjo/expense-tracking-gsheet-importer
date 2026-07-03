@@ -25,17 +25,26 @@ interface DevModeUser {
 }
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(() => {
+    if (process.env.NODE_ENV === 'production') {
+      return null;
+    }
+
+    const devModeUser = localStorage.getItem('dev_mode_user');
+    return devModeUser ? (JSON.parse(devModeUser) as User) : null;
+  });
+  const [loading, setLoading] = useState(() => {
+    if (process.env.NODE_ENV === 'production') {
+      return true;
+    }
+
+    return !localStorage.getItem('dev_mode_user');
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check for dev mode user in localStorage first
-    const devModeUser = localStorage.getItem('dev_mode_user');
-    if (devModeUser && process.env.NODE_ENV !== 'production') {
-      setUser(JSON.parse(devModeUser) as User);
-      setLoading(false);
-      return () => {};
+    if (process.env.NODE_ENV !== 'production' && localStorage.getItem('dev_mode_user')) {
+      return;
     }
 
     const unsubscribe = auth.onAuthStateChanged((user) => {

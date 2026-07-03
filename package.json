@@ -59,7 +59,7 @@
     "xlsx": "npm:@e965/xlsx@0.20.3"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.3",
+    "@eslint/js": "^10.0.1",
     "@tailwindcss/typography": "^0.5.15",
     "@tailwindcss/vite": "^4.2.0",
     "@types/node": "^22.5.5",
@@ -68,8 +68,8 @@
     "@vitejs/plugin-react-swc": "^3.11.0",
     "@vitest/coverage-v8": "^4.1.9",
     "autoprefixer": "^10.4.20",
-    "eslint": "^9.39.3",
-    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "eslint": "^10.6.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.4.9",
     "globals": "^15.9.0",
     "jsdom": "^28.1.0",
