@@ -1,5 +1,7 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import { defineConfig } from "cypress";
+
+dotenv.config({ quiet: true });
 
 export default defineConfig({
   env: {
