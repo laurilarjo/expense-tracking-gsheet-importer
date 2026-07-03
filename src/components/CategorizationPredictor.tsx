@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -47,21 +47,27 @@ export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = (
   
   const mlService = useMemo(() => new MLCategorizationService(), []);
 
-  const checkModelAvailability = useCallback(async () => {
-    const isAvailable = await mlService.loadModelFromIndexedDB();
-    if (isAvailable) {
-      setModelMetadata(mlService.getModelMetadata());
-      setIsModelLoaded(true);
-      console.log('✅ Model loaded successfully in CategorizationPredictor');
-    } else {
-      setIsModelLoaded(false);
-      console.log('❌ No model found in IndexedDB');
-    }
-  }, [mlService]);
-
   useEffect(() => {
-    checkModelAvailability();
-  }, [checkModelAvailability]);
+    let cancelled = false;
+
+    void (async () => {
+      const isAvailable = await mlService.loadModelFromIndexedDB();
+      if (cancelled) return;
+
+      if (isAvailable) {
+        setModelMetadata(mlService.getModelMetadata());
+        setIsModelLoaded(true);
+        console.log('✅ Model loaded successfully in CategorizationPredictor');
+      } else {
+        setIsModelLoaded(false);
+        console.log('❌ No model found in IndexedDB');
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mlService]);
 
   const generatePredictions = async () => {
     if (!isModelLoaded) {
