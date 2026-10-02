@@ -23,7 +23,7 @@ const AboutPage: React.FC = () => {
           <div className="text-center">
             <h1 className="text-3xl font-bold tracking-tighter">About</h1>
             <p className="text-muted-foreground mt-2">
-              Google Sheets Expense Tracker
+              Lala Expense Tracker
             </p>
             {typeof __BUILD_DATE__ !== 'undefined' && (
               <p className="text-muted-foreground text-sm mt-1">

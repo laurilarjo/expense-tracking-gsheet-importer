@@ -69,6 +69,16 @@ const retrieveStoredToken = (): string | null => {
   }
 };
 
+/** True if a non-expired Sheets access token is in localStorage (no gapi required). */
+export const hasValidSheetsToken = (): boolean => {
+  return retrieveStoredToken() !== null;
+};
+
+/** Clear the stored Sheets access token. */
+export const clearSheetsAuthorization = (): void => {
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+};
+
 
 // Load the Google API client library
 export const loadGapiClient = (): Promise<void> => {

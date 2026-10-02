@@ -3,6 +3,8 @@ import { SettingsProvider } from '@/contexts/SettingsContext';
 import { GoogleSheetsConfig } from '@/components/Settings/GoogleSheetsConfig';
 import { UserManager } from '@/components/Settings/UserManager';
 import { ExchangeRateConfig } from '@/components/Settings/ExchangeRateConfig';
+import { ImportSettings } from '@/components/Settings/ImportSettings';
+import { ExportSettings } from '@/components/Settings/ExportSettings';
 import { CategorizationTrainer } from '@/components/CategorizationTrainer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { NavigationBar } from '@/components/NavigationBar';
@@ -69,9 +71,6 @@ const SettingsPageContent: React.FC = () => {
         {/* Google Sheets Configuration */}
         <GoogleSheetsConfig />
 
-        {/* Exchange Rate Configuration */}
-        <ExchangeRateConfig />
-
         {/* User Management */}
         <Card className="w-full p-6 space-y-6 shadow-lg animate-fade-in">
           <div className="space-y-2 text-center">
@@ -98,6 +97,13 @@ const SettingsPageContent: React.FC = () => {
             }}
           />
         </Card>
+
+        {/* Exchange Rate Configuration */}
+        <ExchangeRateConfig />
+
+        {/* Backup / restore settings JSON */}
+        <ExportSettings />
+        <ImportSettings />
         </div>
       </div>
     </div>

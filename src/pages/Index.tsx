@@ -1,10 +1,7 @@
 
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { MultiBankFileUpload } from "@/components/MultiBankFileUpload";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { GoogleSheetsAuth } from "@/components/GoogleSheetsAuth";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { NavigationBar } from "@/components/NavigationBar";
@@ -33,15 +30,13 @@ const Index = () => {
       <NavigationBar />
       <div className="flex items-center justify-center p-4">
         <div className="w-full max-w-2xl space-y-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tighter">Google Sheets Uploader</h1>
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold tracking-tighter">Lala Expense Tracker</h1>
+            <p className="text-muted-foreground text-sm">
+              Follow the steps below to import bank transactions into Google Sheets.
+            </p>
           </div>
-        
-        {/* Google Sheets Authorization */}
-        <GoogleSheetsAuth />
-        
-        {/* File Upload Card */}
-        <Card className="w-full p-6 space-y-6 shadow-lg animate-fade-in">
+
           <MultiBankFileUpload 
             onUploadSuccess={(fileName, bankName) => {
               toast({
@@ -57,7 +52,6 @@ const Index = () => {
               });
             }}
           />
-        </Card>
         </div>
       </div>
     </div>

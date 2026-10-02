@@ -17,4 +17,5 @@ export interface SettingsContextType {
   setLastSelectedUser: (userId: string) => void;
   setExchangeratesApiKey: (key: string) => void;
   refreshSettings: () => void;
+  replaceSettings: (settings: AppSettings) => void;
 }

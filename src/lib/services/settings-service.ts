@@ -1,7 +1,10 @@
 import { AppSettings } from '../types/settings';
 import { User } from '../types/user';
 
-const SETTINGS_STORAGE_KEY = 'google-sheets-uploader-settings';
+const SETTINGS_STORAGE_KEY = 'lala-expense-tracker-settings';
+const LEGACY_SETTINGS_STORAGE_KEYS = [
+  'google-sheets-uploader-settings',
+];
 
 const DEFAULT_SETTINGS: AppSettings = {
   users: [],
@@ -25,8 +28,23 @@ export class SettingsService {
     return SettingsService.instance;
   }
 
+  private migrateLegacySettingsIfNeeded(): void {
+    if (localStorage.getItem(SETTINGS_STORAGE_KEY)) {
+      return;
+    }
+    for (const legacyKey of LEGACY_SETTINGS_STORAGE_KEYS) {
+      const legacy = localStorage.getItem(legacyKey);
+      if (legacy) {
+        localStorage.setItem(SETTINGS_STORAGE_KEY, legacy);
+        localStorage.removeItem(legacyKey);
+        return;
+      }
+    }
+  }
+
   private loadSettings(): AppSettings {
     try {
+      this.migrateLegacySettingsIfNeeded();
       const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
@@ -128,5 +146,18 @@ export class SettingsService {
       return null;
     }
     return this.getUserById(this.settings.lastSelectedUser);
+  }
+
+  /**
+   * Replace all settings from a parsed AppSettings-shaped object (e.g. restored localStorage JSON).
+   */
+  public replaceSettings(next: AppSettings): void {
+    this.settings = {
+      users: next.users,
+      googleSheetsId: next.googleSheetsId ?? '',
+      lastSelectedUser: next.lastSelectedUser,
+      exchangeratesApiKey: next.exchangeratesApiKey ?? '',
+    };
+    this.saveSettings();
   }
 }
