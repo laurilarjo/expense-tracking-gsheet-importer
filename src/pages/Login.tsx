@@ -1,16 +1,33 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { Wrench } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
-  const { signInWithGoogle, devModeLogin } = useAuth();
+  const { user, signInWithGoogle, devModeLogin } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [showDevOptions, setShowDevOptions] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const isDev = process.env.NODE_ENV !== 'production';
+
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
+  const handleSignIn = async () => {
+    setIsSigningIn(true);
+    try {
+      await signInWithGoogle();
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
 
   const handleDevModeClick = () => {
     const email = window.prompt("Enter your email for dev mode login:");
@@ -42,14 +59,15 @@ const Login = () => {
             Welcome back
           </CardTitle>
           <CardDescription>
-            Sign in to your account to continue
+            Connect Google Sheets to continue. Everything stays in your browser — nothing is saved to our servers.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button
-            onClick={signInWithGoogle}
+            onClick={handleSignIn}
             className="w-full"
             variant="outline"
+            disabled={isSigningIn}
           >
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
               <path
@@ -69,7 +87,7 @@ const Login = () => {
                 fill="#EA4335"
               />
             </svg>
-            Continue with Google
+            {isSigningIn ? 'Connecting…' : 'Continue with Google Sheets'}
           </Button>
 
           {(isDev && showDevOptions) && (

@@ -36,7 +36,10 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
 
     // Listen for storage changes (when settings are updated in another tab/window)
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'google-sheets-uploader-settings') {
+      if (
+        e.key === 'lala-expense-tracker-settings' ||
+        e.key === 'google-sheets-uploader-settings'
+      ) {
         refreshSettings();
       }
     };
@@ -102,6 +105,12 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     setSettings(settingsService.forceRefreshSettings());
   }, []);
 
+  const replaceSettings = (next: AppSettings) => {
+    const settingsService = SettingsService.getInstance();
+    settingsService.replaceSettings(next);
+    setSettings(settingsService.getSettings());
+  };
+
   const value: SettingsContextType = {
     settings,
     updateSettings,
@@ -111,7 +120,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     setGoogleSheetsId,
     setLastSelectedUser,
     setExchangeratesApiKey,
-    refreshSettings
+    refreshSettings,
+    replaceSettings,
   };
 
   return (

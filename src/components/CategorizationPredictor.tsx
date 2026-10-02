@@ -2,12 +2,9 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
-import { Separator } from './ui/separator';
 import { 
   Brain, 
-  CheckCircle, 
   AlertCircle, 
   Loader2, 
   Target,
@@ -15,14 +12,37 @@ import {
 } from 'lucide-react';
 import { MLCategorizationService } from '../lib/services/ml-categorization-service';
 import { Transaction } from '../lib/types/transaction';
-import { CategorizationResult, CategorizationPrediction, ModelMetadata } from '../lib/types/categorization';
+import { CategorizationPrediction, ModelMetadata } from '../lib/types/categorization';
 
 interface CategorizationPredictorProps {
   transactions: Transaction[];
+  /** Change this when a new file is loaded to clear prior predictions. */
+  resetKey?: string;
   onPredictionsUpdate?: (predictions: CategorizationPrediction[]) => void;
   onTransactionUpdate?: (updatedTransactions: Transaction[]) => void;
-  onUploadToSheets?: (categorizedTransactions: Transaction[]) => void;
-  isUploading?: boolean;
+}
+
+export function applyHighConfidenceCategories(
+  transactions: Transaction[],
+  predictions: CategorizationPrediction[]
+): Transaction[] {
+  return transactions.map((transaction, index) => {
+    const prediction = predictions[index];
+    if (prediction && prediction.result.confidence >= 0.8) {
+      return {
+        ...transaction,
+        category: prediction.result.category,
+        predictedCategory: prediction.result.category,
+        categoryConfidence: prediction.result.confidence
+      };
+    }
+    return {
+      ...transaction,
+      category: undefined,
+      predictedCategory: undefined,
+      categoryConfidence: undefined
+    };
+  });
 }
 
 interface PredictionState {
@@ -32,10 +52,9 @@ interface PredictionState {
 
 export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = ({
   transactions,
+  resetKey,
   onPredictionsUpdate,
   onTransactionUpdate,
-  onUploadToSheets,
-  isUploading = false
 }) => {
   const [state, setState] = useState<PredictionState>({
     predictions: [],
@@ -63,12 +82,15 @@ export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = (
     checkModelAvailability();
   }, [checkModelAvailability]);
 
+  // Reset predictions when a new file session starts
+  useEffect(() => {
+    setState({ predictions: [], isProcessing: false });
+    onPredictionsUpdate?.([]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetKey]);
+
   const generatePredictions = async () => {
-    if (!isModelLoaded) {
-      setState(prev => ({ 
-        ...prev, 
-        isProcessing: false 
-      }));
+    if (!isModelLoaded || transactions.length === 0) {
       return;
     }
 
@@ -87,7 +109,6 @@ export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = (
           });
         } catch (error) {
           console.error('Error predicting category for transaction:', error);
-          // Add fallback prediction
           predictions.push({
             transaction,
             result: {
@@ -100,86 +121,15 @@ export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = (
         }
       }
 
-      setState(prev => ({ 
-        ...prev, 
-        predictions, 
-        isProcessing: false 
-      }));
+      setState({ predictions, isProcessing: false });
+      onPredictionsUpdate?.(predictions);
 
-      if (onPredictionsUpdate) {
-        onPredictionsUpdate(predictions);
-      }
+      const categorized = applyHighConfidenceCategories(transactions, predictions);
+      onTransactionUpdate?.(categorized);
     } catch (error) {
       console.error('Error generating predictions:', error);
-      setState(prev => ({ 
-        ...prev, 
-        isProcessing: false 
-      }));
+      setState(prev => ({ ...prev, isProcessing: false }));
     }
-  };
-
-
-  const applyAllPredictions = () => {
-    const updatedTransactions = transactions.map((transaction, index) => {
-      const prediction = state.predictions[index];
-      if (prediction && prediction.result.confidence >= 0.8) {
-        return {
-          ...transaction,
-          category: prediction.result.category,
-          predictedCategory: prediction.result.category,
-          categoryConfidence: prediction.result.confidence
-        };
-      }
-      // For low confidence predictions, leave category empty
-      return {
-        ...transaction,
-        category: undefined,
-        predictedCategory: undefined,
-        categoryConfidence: undefined
-      };
-    });
-
-    if (onTransactionUpdate) {
-      onTransactionUpdate(updatedTransactions);
-    }
-  };
-
-  const handleUploadWithCategorization = () => {
-    // Apply categories to transactions
-    const categorizedTransactions = transactions.map((transaction, index) => {
-      const prediction = state.predictions[index];
-      if (prediction && prediction.result.confidence >= 0.8) {
-        return {
-          ...transaction,
-          category: prediction.result.category,
-          predictedCategory: prediction.result.category,
-          categoryConfidence: prediction.result.confidence
-        };
-      }
-      // For low confidence predictions, leave category empty
-      return {
-        ...transaction,
-        category: undefined,
-        predictedCategory: undefined,
-        categoryConfidence: undefined
-      };
-    });
-
-    // Update the transactions with categories
-    if (onTransactionUpdate) {
-      onTransactionUpdate(categorizedTransactions);
-    }
-    
-    // Upload with the categorized transactions
-    if (onUploadToSheets) {
-      onUploadToSheets(categorizedTransactions);
-    }
-  };
-
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.8) return 'text-green-600';
-    if (confidence >= 0.6) return 'text-yellow-600';
-    return 'text-red-600';
   };
 
   const getConfidenceBadgeVariant = (confidence: number) => {
@@ -188,109 +138,65 @@ export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = (
     return 'destructive';
   };
 
-  const filteredPredictions = state.predictions;
-
   const highConfidenceCount = state.predictions.filter(p => p.result.confidence >= 0.8).length;
   const mediumConfidenceCount = state.predictions.filter(p => p.result.confidence >= 0.6 && p.result.confidence < 0.8).length;
   const lowConfidenceCount = state.predictions.filter(p => p.result.confidence < 0.6).length;
 
+  if (transactions.length === 0) {
+    return (
+      <div className="text-center text-muted-foreground py-6">
+        <Brain className="h-10 w-10 mx-auto mb-3 opacity-50" />
+        <p>Upload a bank file first to categorize transactions.</p>
+      </div>
+    );
+  }
+
   if (!isModelLoaded) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5" />
-            ML Categorization
-          </CardTitle>
-          <CardDescription>
-            No trained model available. Please train a model first using the Categorization Trainer.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              To use automatic categorization, you need to train a machine learning model first.
-              Go to the Settings page to train your model.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          No trained model available. Train a model in Settings first, then generate predictions here.
+          {modelMetadata && (
+            <span className="block mt-1 text-sm">
+              Model accuracy: {(modelMetadata.accuracy * 100).toFixed(1)}%
+            </span>
+          )}
+        </AlertDescription>
+      </Alert>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5" />
-            ML Categorization
-          </CardTitle>
-          <CardDescription>
-            Automatically categorize transactions using your trained ML model.
-            {modelMetadata && (
-              <span className="block mt-1 text-sm">
-                Model accuracy: {(modelMetadata.accuracy * 100).toFixed(1)}% | 
-                Trained on {modelMetadata.transactionCount} transactions
-              </span>
-            )}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <Button 
-              onClick={generatePredictions} 
-              disabled={state.isProcessing || transactions.length === 0}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {state.isProcessing ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Brain className="h-4 w-4 mr-2" />
-                  Generate Predictions
-                </>
-              )}
-            </Button>
-            
-            {state.predictions.length > 0 && (
-              <div className="flex flex-col gap-1">
-                <Button 
-                  onClick={handleUploadWithCategorization}
-                  disabled={isUploading}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Upload to Google Sheets
-                    </>
-                  )}
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  Only high confidence categories will be populated
-                </p>
-              </div>
-            )}
-          </div>
+    <div className="space-y-4">
+      {modelMetadata && (
+        <p className="text-sm text-muted-foreground">
+          Model accuracy: {(modelMetadata.accuracy * 100).toFixed(1)}% · Trained on {modelMetadata.transactionCount} transactions
+        </p>
+      )}
 
-        </CardContent>
-      </Card>
+      <Button 
+        onClick={generatePredictions} 
+        disabled={state.isProcessing || transactions.length === 0}
+        className="bg-blue-600 hover:bg-blue-700"
+      >
+        {state.isProcessing ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Processing...
+          </>
+        ) : (
+          <>
+            <Brain className="h-4 w-4 mr-2" />
+            Generate Predictions
+          </>
+        )}
+      </Button>
 
-      {/* Prediction Statistics */}
       {state.predictions.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
               <TrendingUp className="h-5 w-5" />
               Prediction Statistics
             </CardTitle>
@@ -314,26 +220,24 @@ export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = (
         </Card>
       )}
 
-      {/* Predictions List */}
-      {filteredPredictions.length > 0 && (
+      {state.predictions.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
               <Target className="h-5 w-5" />
               Categorization Predictions
             </CardTitle>
             <CardDescription>
-              Showing {filteredPredictions.length} of {state.predictions.length} predictions
+              Showing {state.predictions.length} predictions
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {filteredPredictions.map((prediction, index) => {
-              const originalIndex = state.predictions.indexOf(prediction);
+            {state.predictions.map((prediction, index) => {
               const transaction = prediction.transaction;
               const result = prediction.result;
               
               return (
-                <div key={originalIndex} className="border rounded-lg p-3 space-y-2">
+                <div key={index} className="border rounded-lg p-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -377,16 +281,10 @@ export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = (
         </Card>
       )}
 
-      {/* No Predictions Message */}
       {state.predictions.length === 0 && !state.isProcessing && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center text-muted-foreground">
-              <Brain className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No predictions generated yet. Click "Generate Predictions" to start.</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="text-center text-muted-foreground py-4">
+          <p>No predictions generated yet. Click "Generate Predictions" to start.</p>
+        </div>
       )}
     </div>
   );

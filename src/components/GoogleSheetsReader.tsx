@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 
 /**
  * Extract spreadsheet ID from input.
@@ -37,7 +36,7 @@ function getSheetNameFromRange(range: string): string | null {
   return trimmed.split("!")[0].trim() || null;
 }
 
-// Direct Google Sheets API function (no Firebase needed)
+// Direct Google Sheets API read
 const readGoogleSheetDirect = async (
   spreadsheetId: string,
   range: string,
@@ -66,7 +65,6 @@ const readGoogleSheetDirect = async (
 
 export const GoogleSheetsReader = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [spreadsheetId, setSpreadsheetId] = useState("");
   const [range, setRange] = useState("Sheet1!A1:E10");
   const [isLoading, setIsLoading] = useState(false);
@@ -100,7 +98,6 @@ export const GoogleSheetsReader = () => {
 
       const { token } = JSON.parse(tokenData);
       
-      // Use direct Google Sheets API call (no Firebase needed)
       const sheetData = await readGoogleSheetDirect(spreadsheetId, range, token);
       
       setData(sheetData);

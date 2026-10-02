@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Upload, File, CheckCircle2, Building2, User, BarChart3, Calendar, Euro, User as UserIcon, Tag, Brain, Loader2 } from "lucide-react";
+import { CheckCircle2, Building2, User, BarChart3, Calendar, Euro, User as UserIcon, Tag, Loader2, CheckCircle, Upload } from "lucide-react";
 import { parseOPFile } from "@/lib/parsers/op-parse";
 import { parseOPCreditCardFile } from "@/lib/parsers/op-credit-card-parse";
 import { parseNordeaFiFile } from "@/lib/parsers/nordea-fi-parse";
@@ -15,9 +15,12 @@ import { BankLogo } from "@/components/BankLogo";
 import { useSettings } from "@/contexts/SettingsContext";
 import { GoogleSheetsService } from "@/lib/services/google-sheets-service";
 import { UploadSummary } from "@/lib/types/upload-result";
-import { CategorizationPredictor } from "@/components/CategorizationPredictor";
+import { applyHighConfidenceCategories, CategorizationPredictor } from "@/components/CategorizationPredictor";
 import { Transaction } from "@/lib/types/transaction";
 import { CategorizationPrediction } from "@/lib/types/categorization";
+import { WorkflowStep } from "@/components/WorkflowStep";
+import { GoogleSheetsAuth } from "@/components/GoogleSheetsAuth";
+import { hasValidSheetsToken } from "@/lib/googleSheetsAPI";
 
 interface MultiBankFileUploadProps {
   onUploadSuccess: (fileName: string, bankName: string) => void;
@@ -31,22 +34,23 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
   const [uploadComplete, setUploadComplete] = useState<{ [key: string]: boolean }>({});
   const [uploadSummaries, setUploadSummaries] = useState<UploadSummary[]>([]);
   
-  // Categorization state
+  const [sheetsAuthorized, setSheetsAuthorized] = useState(() => hasValidSheetsToken());
   const [parsedTransactions, setParsedTransactions] = useState<Transaction[]>([]);
-  const [showCategorization, setShowCategorization] = useState(false);
   const [currentBankKey, setCurrentBankKey] = useState<string>('');
+  const [fileSessionKey, setFileSessionKey] = useState<string>('');
   const [categorizationPredictions, setCategorizationPredictions] = useState<CategorizationPrediction[]>([]);
+  const [categorizationSkipped, setCategorizationSkipped] = useState(false);
+  const [sheetsUploadDone, setSheetsUploadDone] = useState(false);
   
-  // Get the currently selected user
   const selectedUser = settings.users.find(user => user.id === settings.lastSelectedUser);
-  
-  // Get banks assigned to the selected user
   const userBanks = selectedUser ? selectedUser.allowedBanks : [];
 
-  // Refresh settings when component mounts to ensure we have the latest Google Sheets ID
+  const hasParsedFile = parsedTransactions.length > 0;
+  const categorizationComplete = categorizationPredictions.length > 0 || categorizationSkipped;
+  const isSheetsUploading = Boolean(currentBankKey && isUploading[currentBankKey]);
+
   useEffect(() => {
     refreshSettings();
-    console.log('🔄 Refreshed settings, Google Sheets ID:', settings.googleSheetsId);
   }, [refreshSettings, settings.googleSheetsId]);
 
   const onDrop = useCallback(async (acceptedFiles: File[], bankKey: string) => {
@@ -63,7 +67,6 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
       return;
     }
 
-    // Check file extension
     const expectedExtensions = bankInfo.fileTypes;
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
     if (!expectedExtensions.includes(`.${fileExtension}`)) {
@@ -73,11 +76,13 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
 
     setIsUploading(prev => ({ ...prev, [bankKey]: true }));
     setUploadProgress(prev => ({ ...prev, [bankKey]: 0 }));
+    setSheetsUploadDone(false);
+    setCategorizationSkipped(false);
+    setCategorizationPredictions([]);
 
     try {
       setUploadProgress(prev => ({ ...prev, [bankKey]: 50 }));
 
-      // Parse based on bank type
       let transactions;
       if (bankKey === Bank.OP) {
         transactions = await parseOPFile(file);
@@ -94,7 +99,6 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
       } else if (bankKey === Bank.HANDELSBANKEN) {
         transactions = await parseHandelsbankenFile(file);
       } else {
-        // For other banks, just log for now
         console.log(`File uploaded for ${bankInfo.name}:`, file.name);
         setUploadProgress(prev => ({ ...prev, [bankKey]: 100 }));
         setUploadComplete(prev => ({ ...prev, [bankKey]: true }));
@@ -103,12 +107,11 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
         return;
       }
         
-        // Store parsed transactions and show categorization step
-        setParsedTransactions(transactions);
-        setCurrentBankKey(bankKey);
-        setShowCategorization(true);
-        setUploadProgress(prev => ({ ...prev, [bankKey]: 100 }));
-        setIsUploading(prev => ({ ...prev, [bankKey]: false }));
+      setParsedTransactions(transactions);
+      setCurrentBankKey(bankKey);
+      setFileSessionKey(`${bankKey}-${file.name}-${Date.now()}`);
+      setUploadProgress(prev => ({ ...prev, [bankKey]: 100 }));
+      setIsUploading(prev => ({ ...prev, [bankKey]: false }));
     } catch (error) {
       console.error(`${bankInfo.name} parsing error:`, error);
       onUploadError(`Failed to parse ${bankInfo.name} file: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -116,20 +119,25 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
     }
   }, [onUploadSuccess, onUploadError]);
 
-  // Handle categorization predictions update
   const handlePredictionsUpdate = (predictions: CategorizationPrediction[]) => {
     setCategorizationPredictions(predictions);
+    if (predictions.length > 0) {
+      setCategorizationSkipped(false);
+    }
   };
 
-  // Handle transaction updates from categorization
   const handleTransactionUpdate = (updatedTransactions: Transaction[]) => {
     setParsedTransactions(updatedTransactions);
   };
 
-  // Proceed with upload to Google Sheets after categorization
   const proceedWithUpload = async (categorizedTransactions?: Transaction[]) => {
     if (!selectedUser || !settings.googleSheetsId) {
       onUploadError("No user selected or Google Sheets not configured");
+      return;
+    }
+
+    if (!currentBankKey) {
+      onUploadError("No bank file selected");
       return;
     }
 
@@ -137,26 +145,16 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
       setIsUploading(prev => ({ ...prev, [currentBankKey]: true }));
       setUploadProgress(prev => ({ ...prev, [currentBankKey]: 75 }));
       
-      console.log('📊 Using Google Sheets ID:', settings.googleSheetsId);
-      
-      // Get access token
       const tokenData = localStorage.getItem("google_sheets_token");
       if (!tokenData) {
         throw new Error("No Google Sheets access token found. Please authorize first.");
       }
       
       const { token } = JSON.parse(tokenData);
-      
-      // Create context for sheets operation
       const sheetsService = GoogleSheetsService.getInstance();
       const context = sheetsService.createContext(currentBankKey as Bank, selectedUser.name);
-      
-      console.log('📋 Sheet context:', context);
-      
-      // Use categorized transactions if provided, otherwise use parsed transactions
       const transactionsToUpload = categorizedTransactions || parsedTransactions;
       
-      // Import to Google Sheets
       const uploadResult = await sheetsService.importToSheets(
         transactionsToUpload, 
         context, 
@@ -164,7 +162,6 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
         token
       );
       
-      // Store upload summary
       const summary: UploadSummary = {
         fileName: `File for ${currentBankKey}`,
         bankName: `${selectedUser.name} - ${BANK_CONFIG[currentBankKey as Bank]?.name}`,
@@ -174,13 +171,11 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
       
       setUploadSummaries(prev => [...prev, summary]);
       
-      // Check if upload was successful
       if (uploadResult.success) {
-        console.log(`Successfully uploaded ${transactionsToUpload.length} transactions to Google Sheets`);
         setUploadComplete(prev => ({ ...prev, [currentBankKey]: true }));
+        setSheetsUploadDone(true);
         onUploadSuccess(`File for ${currentBankKey}`, BANK_CONFIG[currentBankKey as Bank]?.name || 'Unknown Bank');
       } else {
-        // Upload failed - show error message
         const errorMessage = uploadResult.error || 'Unknown error occurred during upload';
         onUploadError(`Failed to upload to Google Sheets: ${errorMessage}`);
       }
@@ -189,17 +184,20 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
       onUploadError(`Failed to upload to Google Sheets: ${sheetsError instanceof Error ? sheetsError.message : 'Unknown error'}`);
     } finally {
       setIsUploading(prev => ({ ...prev, [currentBankKey]: false }));
-      setShowCategorization(false);
-      setParsedTransactions([]);
-      setCategorizationPredictions([]);
     }
   };
 
-  // Skip categorization and proceed directly
-  const skipCategorization = async () => {
-    await proceedWithUpload();
+  const handleUploadToSheets = async () => {
+    const categorized = categorizationPredictions.length > 0
+      ? applyHighConfidenceCategories(parsedTransactions, categorizationPredictions)
+      : parsedTransactions;
+    setParsedTransactions(categorized);
+    await proceedWithUpload(categorized);
   };
 
+  const handleSkipCategorization = () => {
+    setCategorizationSkipped(true);
+  };
 
   const CreateDropzone = ({ bankKey, bankInfo }: { bankKey: string; bankInfo: { name: string; fileTypes: string[] } }) => {
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -212,7 +210,8 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
         acc[mimeType] = [ext];
         return acc;
       }, {}),
-      multiple: false
+      multiple: false,
+      disabled: !sheetsAuthorized,
     });
 
     return (
@@ -221,7 +220,7 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
         className={`
           border-2 border-dashed rounded-lg p-6 transition-colors duration-200 ease-in-out
           ${isDragActive ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-primary/50'}
-          ${isUploading[bankKey] ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+          ${isUploading[bankKey] || !sheetsAuthorized ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
         `}
       >
         <input {...getInputProps()} />
@@ -243,119 +242,177 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h3 className="text-xl font-semibold">Upload Bank Files</h3>
-        <p className="text-muted-foreground">Select the appropriate bank and upload your transaction file</p>
-      </div>
+      <WorkflowStep
+        step={1}
+        title="Login to Google Sheets"
+        description="Connect your Google account so the app can write to your spreadsheet."
+        enabled
+        completed={sheetsAuthorized}
+      >
+        <GoogleSheetsAuth onAuthorizedChange={setSheetsAuthorized} />
+      </WorkflowStep>
 
-      {/* User Selector */}
-      <div className="space-y-4">
-        <h4 className="text-lg font-medium flex items-center gap-2">
-          <User className="h-5 w-5" />
-          Select User
-        </h4>
-        <div className="flex flex-wrap gap-2">
-          {settings.users.map((user) => (
-            <Button
-              key={user.id}
-              variant={settings.lastSelectedUser === user.id ? "default" : "outline-solid"}
-              size="sm"
-              onClick={() => setLastSelectedUser(user.id)}
-            >
-              {user.name}
-            </Button>
-          ))}
-        </div>
-        {selectedUser && (
-          <p className="text-sm text-muted-foreground">
-            Selected: <strong>{selectedUser.name}</strong> - Banks: {userBanks.join(', ') || 'None assigned'}
-          </p>
-        )}
-      </div>
-
-      {/* Bank Uploads - Only show banks assigned to selected user */}
-      {selectedUser && userBanks.length > 0 ? (
+      <WorkflowStep
+        step={2}
+        title="Upload bank files"
+        description="Select a user and upload a transaction export from one of their banks."
+        enabled={sheetsAuthorized}
+        completed={hasParsedFile}
+      >
         <div className="space-y-6">
-          <h4 className="text-lg font-medium flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            Bank Upload Areas
-          </h4>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {userBanks.map((bankId) => {
-              const bank = BANK_CONFIG[bankId as Bank];
-              if (!bank) return null;
+          <div className="space-y-4">
+            <h4 className="text-lg font-medium flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Select User
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {settings.users.map((user) => (
+                <Button
+                  key={user.id}
+                  variant={settings.lastSelectedUser === user.id ? "default" : "outline-solid"}
+                  size="sm"
+                  onClick={() => setLastSelectedUser(user.id)}
+                >
+                  {user.name}
+                </Button>
+              ))}
+            </div>
+            {selectedUser && (
+              <p className="text-sm text-muted-foreground">
+                Selected: <strong>{selectedUser.name}</strong> - Banks: {userBanks.join(', ') || 'None assigned'}
+              </p>
+            )}
+          </div>
+
+          {selectedUser && userBanks.length > 0 ? (
+            <div className="space-y-6">
+              <h4 className="text-lg font-medium flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Bank Upload Areas
+              </h4>
               
-              return (
-                <div key={bankId} className="space-y-4">
-                  <h5 className="text-md font-medium text-center">
-                    {bank.name}
-                  </h5>
-                  <CreateDropzone bankKey={bankId as Bank} bankInfo={bank} />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {userBanks.map((bankId) => {
+                  const bank = BANK_CONFIG[bankId as Bank];
+                  if (!bank) return null;
                   
-                  {isUploading[bankId] && (
-                    <div className="space-y-2">
-                      <Progress value={uploadProgress[bankId] || 0} className="h-2" />
-                      <p className="text-sm text-center text-muted-foreground">
-                        Processing {bank.name} file... {uploadProgress[bankId] || 0}%
-                      </p>
+                  return (
+                    <div key={bankId} className="space-y-4">
+                      <h5 className="text-md font-medium text-center">
+                        {bank.name}
+                      </h5>
+                      <CreateDropzone bankKey={bankId as Bank} bankInfo={bank} />
+                      
+                      {isUploading[bankId] && (
+                        <div className="space-y-2">
+                          <Progress value={uploadProgress[bankId] || 0} className="h-2" />
+                          <p className="text-sm text-center text-muted-foreground">
+                            Processing {bank.name} file... {uploadProgress[bankId] || 0}%
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : selectedUser ? (
-        <div className="text-center text-muted-foreground py-8">
-          <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>No banks assigned to {selectedUser.name}</p>
-          <p className="text-sm">Go to Settings to assign banks to this user</p>
-        </div>
-      ) : (
-        <div className="text-center text-muted-foreground py-8">
-          <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>No user selected</p>
-          <p className="text-sm">Please select a user to see available bank uploads</p>
-        </div>
-      )}
+                  );
+                })}
+              </div>
 
-      {/* Categorization Step */}
-      {showCategorization && parsedTransactions.length > 0 && (
-        <div className="space-y-6 mt-8">
-          <div className="text-center">
-            <h3 className="text-xl font-semibold flex items-center justify-center gap-2">
-              <Brain className="h-6 w-6" />
-              Transaction Categorization
-            </h3>
-            <p className="text-muted-foreground">
-              Review and categorize your {parsedTransactions.length} transactions before uploading to Google Sheets
-            </p>
-          </div>
+              {hasParsedFile && (
+                <p className="text-sm text-center text-green-700 bg-green-50 rounded-md p-3">
+                  Parsed {parsedTransactions.length} transactions. Continue to categorization below.
+                </p>
+              )}
+            </div>
+          ) : selectedUser ? (
+            <div className="text-center text-muted-foreground py-8">
+              <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No banks assigned to {selectedUser.name}</p>
+              <p className="text-sm">Go to Settings to assign banks to this user</p>
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground py-8">
+              <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No user selected</p>
+              <p className="text-sm">Please select a user to see available bank uploads</p>
+            </div>
+          )}
+        </div>
+      </WorkflowStep>
 
+      <WorkflowStep
+        step={3}
+        title="Categorize transactions automatically"
+        description="Run the ML model to suggest categories, or skip this step."
+        enabled={hasParsedFile}
+        completed={categorizationComplete}
+      >
+        <div className="space-y-4">
           <CategorizationPredictor
             transactions={parsedTransactions}
+            resetKey={fileSessionKey}
             onPredictionsUpdate={handlePredictionsUpdate}
             onTransactionUpdate={handleTransactionUpdate}
-            onUploadToSheets={proceedWithUpload}
-            isUploading={isUploading[currentBankKey]}
           />
 
-          <div className="flex justify-center gap-4">
+          {hasParsedFile && (
             <Button
-              onClick={skipCategorization}
+              onClick={handleSkipCategorization}
               variant="outline"
-              disabled={isUploading[currentBankKey]}
+              disabled={isSheetsUploading || categorizationPredictions.length > 0}
             >
-              Skip Categorization & Upload
+              Skip categorization
             </Button>
-          </div>
+          )}
         </div>
-      )}
+      </WorkflowStep>
 
-      {/* Upload Summary Section */}
+      <WorkflowStep
+        step={4}
+        title="Upload to Google Sheets"
+        description="Write the parsed transactions to your spreadsheet."
+        enabled={categorizationComplete}
+        completed={sheetsUploadDone}
+      >
+        {categorizationComplete ? (
+          <div className="space-y-3">
+            <Button
+              onClick={handleUploadToSheets}
+              disabled={isSheetsUploading || !hasParsedFile}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {isSheetsUploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Upload to Google Sheets
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Only high confidence categories will be populated
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {parsedTransactions.length} transaction{parsedTransactions.length === 1 ? '' : 's'} ready to upload
+              {categorizationPredictions.length > 0
+                ? ` · ${categorizationPredictions.filter(p => p.result.confidence >= 0.8).length} high-confidence categories`
+                : categorizationSkipped
+                  ? ' · categories skipped'
+                  : ''}
+            </p>
+          </div>
+        ) : (
+          <div className="text-center text-muted-foreground py-6">
+            <Upload className="h-10 w-10 mx-auto mb-3 opacity-50" />
+            <p>Generate predictions or skip categorization to unlock upload.</p>
+          </div>
+        )}
+      </WorkflowStep>
+
       {uploadSummaries.length > 0 && (
-        <div className="space-y-6 mt-8">
+        <div className="space-y-6">
           <h4 className="text-lg font-medium flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
             Upload Summary
@@ -365,7 +422,7 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
             {uploadSummaries
               .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
               .map((summary, index) => (
-              <div key={index} className="border rounded-lg p-4 space-y-4">
+              <div key={index} className="border rounded-lg p-4 space-y-4 bg-white shadow-sm">
                 <div className="flex items-center justify-between">
                   <div>
                     <h5 className="font-medium">{summary.fileName}</h5>
@@ -407,7 +464,6 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
                   </div>
                 )}
 
-                {/* New Transactions Details */}
                 {summary.result.success && summary.result.newTransactions.length > 0 && (
                   <div className="space-y-2">
                     <h6 className="font-medium text-sm">New Transactions Added:</h6>

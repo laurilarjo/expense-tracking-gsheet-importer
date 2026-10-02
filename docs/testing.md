@@ -22,11 +22,10 @@
 
 ## Cypress: mocking / bypassing auth
 
-The app has two auth layers. You can bypass both so tests never hit real Google or Firebase:
+The app gates entry on Google Sheets OAuth (or Dev Mode). You can bypass auth so tests never hit real Google:
 
-1. **App gate (Firebase)** — so you’re not redirected to `/login`:
+1. **App gate** — so you’re not redirected to `/login`:
    - **Recommended:** `cy.visitAsDevMode('/')` — sets a dev-mode user in `localStorage` before load. **Requires running the app in development** (e.g. `npm run dev` on port 8080), because `AuthContext` only honours `dev_mode_user` when `NODE_ENV !== 'production'`.
-   - Alternatively: `cy.mockFirebaseAuth()` then `cy.visit('/')` — mocks Firebase and sets persistence; use if you run against a production build.
 
 2. **Google Sheets OAuth** — so the app thinks Sheets is already authorized:
    - `cy.mockGoogleAuth()` — sets `google_sheets_token` in `localStorage` and mocks `gapi` / `google.accounts.oauth2`, so the “Authorize Google Sheets Access” flow is skipped.
@@ -35,7 +34,7 @@ The app has two auth layers. You can bypass both so tests never hit real Google 
 
 ```ts
 cy.clearLocalStorage();
-cy.visitAsDevMode('/');           // past Firebase
+cy.visitAsDevMode('/');           // past login gate
 cy.mockGoogleAuth();              // past Google Sheets; optional if test needs the auth UI
 cy.reload();                      // only if you need the app to re-read localStorage
 ```

@@ -1,154 +1,143 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { User, signInWithPopup, signOut } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import {
+  clearSheetsAuthorization,
+  hasValidSheetsToken,
+  initializeGoogleAPIs,
+  requestSheetsAuthorization,
+} from '@/lib/googleSheetsAPI';
+
+export interface AuthUser {
+  email: string | null;
+  displayName: string;
+  isDevMode: boolean;
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   devModeLogin: (email: string) => void;
+  /** Call after Sheets auth succeeds outside of login (e.g. re-auth on home). */
+  refreshAuthFromStorage: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Dev mode user structure to match Firebase User interface
-interface DevModeUser {
-  uid: string;
-  email: string;
-  displayName: string;
-  photoURL: string;
-  emailVerified: boolean;
-  isDevMode: boolean;
-}
+const sheetsAuthUser = (): AuthUser => ({
+  email: null,
+  displayName: 'Google Sheets',
+  isDevMode: false,
+});
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Check for dev mode user in localStorage first
+  const refreshAuthFromStorage = () => {
     const devModeUser = localStorage.getItem('dev_mode_user');
     if (devModeUser && process.env.NODE_ENV !== 'production') {
-      setUser(JSON.parse(devModeUser) as User);
-      setLoading(false);
-      return () => {};
+      try {
+        setUser(JSON.parse(devModeUser) as AuthUser);
+        return;
+      } catch {
+        localStorage.removeItem('dev_mode_user');
+      }
     }
 
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
-      setLoading(false);
-    });
+    if (hasValidSheetsToken()) {
+      setUser(sheetsAuthUser());
+      return;
+    }
 
-    return unsubscribe;
+    setUser(null);
+  };
+
+  useEffect(() => {
+    refreshAuthFromStorage();
+    setLoading(false);
   }, []);
 
   const signInWithGoogle = async () => {
     try {
-      console.log("Starting Google sign-in process...");
-      const result = await signInWithPopup(auth, googleProvider);
-      console.log("Sign-in successful:", result.user.email);
-      
-      toast({
-        title: "Welcome!",
-        description: `Signed in as ${result.user.email}`,
-      });
-      navigate('/');
-    } catch (error: unknown) {
-      const firebaseError = error as { code?: string; message?: string };
-      console.error("Auth error details:", firebaseError.code, firebaseError.message);
-      
-      let errorMessage = "Failed to sign in with Google";
-      
-      // Handle specific Firebase Auth error codes
-      if (firebaseError.code === 'auth/popup-closed-by-user') {
-        errorMessage = "Sign-in cancelled - You closed the popup";
-      } else if (firebaseError.code === 'auth/popup-blocked') {
-        errorMessage = "Sign-in failed - Please allow popups for this site";
-      } else if (firebaseError.code === 'auth/network-request-failed') {
-        errorMessage = "Sign-in failed - Please check your internet connection";
-      } else if (firebaseError.code === 'auth/unauthorized-domain') {
-        errorMessage = "Sign-in failed - This domain is not authorized in your Firebase project";
-        console.log("Current domain:", window.location.hostname);
-        console.log("Make sure to add this domain to Firebase console > Authentication > Settings > Authorized domains");
-      } else if (firebaseError.code === 'auth/internal-error') {
-        errorMessage = "Sign-in failed - Firebase internal error. Please try again";
-      } else if (firebaseError.code === 'auth/cancelled-popup-request') {
-        errorMessage = "Multiple popup requests - Please try again";
-      } else if (firebaseError.code === 'auth/operation-not-allowed') {
-        errorMessage = "Google sign-in is not enabled for this Firebase project";
-        console.log("Enable Google authentication in Firebase console > Authentication > Sign-in method");
+      await initializeGoogleAPIs();
+      const success = await requestSheetsAuthorization();
+      if (success) {
+        setUser(sheetsAuthUser());
+        navigate('/');
       }
-      
+    } catch (error: unknown) {
+      console.error('Sheets authorization error:', error);
       toast({
-        title: "Authentication Error",
-        description: errorMessage,
-        variant: "destructive",
+        title: 'Authentication Error',
+        description: 'Failed to authorize Google Sheets access. Please allow popups and try again.',
+        variant: 'destructive',
       });
-      console.error("Complete auth error:", error);
     }
   };
 
   const devModeLogin = (email: string) => {
     if (process.env.NODE_ENV === 'production') {
-      console.error("Dev mode login attempted in production");
+      console.error('Dev mode login attempted in production');
       return;
     }
 
-    const mockUser: DevModeUser = {
-      uid: `dev-${Date.now()}`,
-      email: email,
+    const mockUser: AuthUser = {
+      email,
       displayName: `Dev User (${email})`,
-      photoURL: 'https://via.placeholder.com/150',
-      emailVerified: true,
-      isDevMode: true
+      isDevMode: true,
     };
 
-    // Store in localStorage to persist through refreshes
     localStorage.setItem('dev_mode_user', JSON.stringify(mockUser));
-    
-    // Set as current user
-    setUser(mockUser as unknown as User);
-    
-    console.log("Dev mode login successful:", email);
+    setUser(mockUser);
+    console.log('Dev mode login successful:', email);
     navigate('/');
   };
 
   const logout = async () => {
     try {
-      // Check if it's a dev mode user
-      if (user && (user as DevModeUser).isDevMode) {
+      if (user?.isDevMode) {
         localStorage.removeItem('dev_mode_user');
         setUser(null);
         toast({
-          title: "Signed out",
-          description: "Dev mode user signed out",
+          title: 'Signed out',
+          description: 'Dev mode user signed out',
         });
         navigate('/login');
         return;
       }
 
-      await signOut(auth);
+      clearSheetsAuthorization();
+      setUser(null);
       toast({
-        title: "Signed out",
-        description: "You have been signed out successfully",
+        title: 'Signed out',
+        description: 'Google Sheets access cleared',
       });
       navigate('/login');
     } catch (error: unknown) {
       toast({
-        title: "Error",
-        description: "Failed to sign out",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to sign out',
+        variant: 'destructive',
       });
-      console.error("Logout error:", error);
+      console.error('Logout error:', error);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, logout, devModeLogin }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        signInWithGoogle,
+        logout,
+        devModeLogin,
+        refreshAuthFromStorage,
+      }}
+    >
       {!loading && children}
     </AuthContext.Provider>
   );

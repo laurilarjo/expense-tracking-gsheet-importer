@@ -2,17 +2,14 @@
 /// <reference types="cypress" />
 
 /**
- * Bypass Firebase auth by setting a dev-mode user in localStorage.
+ * Bypass the app auth gate by setting a dev-mode user in localStorage.
  * Only works when the app is run in development (NODE_ENV !== 'production').
  * Use this in beforeEach so tests hit the app without the login page.
  */
 Cypress.Commands.add('loginByDevMode', (email = 'cypress@example.com') => {
   const devModeUser = {
-    uid: `cypress-${Date.now()}`,
     email,
     displayName: `Cypress User (${email})`,
-    photoURL: 'https://via.placeholder.com/150',
-    emailVerified: true,
     isDevMode: true,
   };
   cy.window().then((win) => {
@@ -21,16 +18,13 @@ Cypress.Commands.add('loginByDevMode', (email = 'cypress@example.com') => {
 });
 
 /**
- * Visit the app as an authenticated dev-mode user (bypasses Firebase/Google login).
+ * Visit the app as an authenticated dev-mode user (bypasses Google Sheets login gate).
  * Run the app in dev mode (e.g. `npm run dev`) so NODE_ENV is development.
  */
 Cypress.Commands.add('visitAsDevMode', (path = '/', email = 'cypress@example.com') => {
   const devModeUser = {
-    uid: `cypress-${Date.now()}`,
     email,
     displayName: `Cypress User (${email})`,
-    photoURL: 'https://via.placeholder.com/150',
-    emailVerified: true,
     isDevMode: true,
   };
   cy.visit(path, {
@@ -77,7 +71,7 @@ Cypress.Commands.add('loginByGoogleApi', () => {
   })
 })
 
-// Google auth mocking using OAuth Playground tokens
+// Google Sheets OAuth mocking
 Cypress.Commands.add('mockGoogleAuth', () => {
   // Get tokens from Cypress environment variables
   const googleRefreshToken = Cypress.env('GOOGLE_REFRESH_TOKEN') || 'test-refresh-token';
@@ -138,57 +132,6 @@ Cypress.Commands.add('mockGoogleAuth', () => {
   });
 });
 
-// Improved Firebase auth mocking that sets the user in localStorage
-Cypress.Commands.add('mockFirebaseAuth', () => {
-  // This approach properly mocks Firebase auth by setting localStorage state
-  const apiKey = Cypress.env('VITE_FIREBASE_API_KEY') ?? '';
-  localStorage.setItem(`firebase:authUser:${apiKey}:[DEFAULT]`, 
-    JSON.stringify({
-      uid: 'test-user-id',
-      email: 'test@example.com',
-      displayName: 'Test User',
-      emailVerified: true
-    })
-  );
-  
-  // Mock HTTP calls to Firebase Auth API
-  cy.intercept('POST', 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp*', {
-    statusCode: 200,
-    body: {
-      kind: 'identitytoolkit#VerifyAssertionResponse',
-      localId: 'test-user-id',
-      email: 'test@example.com',
-      displayName: 'Test User',
-      idToken: 'fake-firebase-id-token',
-      registered: true,
-      refreshToken: 'fake-refresh-token',
-      expiresIn: '3600'
-    }
-  }).as('firebaseAuth');
-
-  // Mock onAuthStateChanged callback
-  cy.window().then((win) => {
-    win.firebase = {
-      auth: () => ({
-        onAuthStateChanged: (callback) => {
-          // Call with a mock user object
-          callback({
-            uid: 'test-user-id',
-            email: 'test@example.com',
-            displayName: 'Test User'
-          });
-          return () => {}; // Return unsubscribe function
-        },
-        currentUser: {
-          uid: 'test-user-id',
-          email: 'test@example.com',
-          displayName: 'Test User'
-        }
-      })
-    };
-  });
-});
-
 // For verifying Google Sheets auth state
 Cypress.Commands.add('verifyGoogleSheetsAuth', () => {
   cy.get('[data-cy="google-sheets-auth-success"]', { timeout: 10000 }).should('be.visible');
@@ -203,7 +146,6 @@ declare global {
       visitAsDevMode(path?: string, email?: string): Chainable<void>
       loginByGoogleApi(): Chainable<void>
       mockGoogleAuth(): Chainable<void>
-      mockFirebaseAuth(): Chainable<void>
       verifyGoogleSheetsAuth(): Chainable<void>
     }
   }

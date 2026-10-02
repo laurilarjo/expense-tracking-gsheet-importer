@@ -1,5 +1,5 @@
 {
-  "name": "expense-tracker",
+  "name": "lala-expense-tracker",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -39,7 +39,6 @@
     "dayjs": "^1.11.18",
     "dotenv": "^16.4.7",
     "embla-carousel-react": "^8.3.0",
-    "firebase": "^12.3.0",
     "input-otp": "^1.2.4",
     "lodash": "^4.18.1",
     "lucide-react": "^0.544.0",

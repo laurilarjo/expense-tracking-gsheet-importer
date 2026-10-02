@@ -2,9 +2,6 @@ import "dotenv/config";
 import { defineConfig } from "cypress";
 
 export default defineConfig({
-  env: {
-    VITE_FIREBASE_API_KEY: process.env.VITE_FIREBASE_API_KEY,
-  },
   e2e: {
     baseUrl: 'http://localhost:8080',
   },

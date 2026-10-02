@@ -4,7 +4,7 @@
 
 **PR media policy:** This is a public repo. Do NOT embed or link videos/images (e.g. Cursor artifact links) in pull request titles or descriptions. Keep PR bodies text-only. Share walkthrough media in the agent chat/summary instead, not in the PR.
 
-This is a client-side React 19 + Vite + TypeScript SPA (a bank-transaction file parser that imports into Google Sheets). There is no backend service in this repo — everything runs in the browser. Firebase and Google Sheets credentials are loaded from environment variables. Copy `.env.sample` to `.env` before running the app or Cypress tests.
+This is a client-side React 19 + Vite + TypeScript SPA (a bank-transaction file parser that imports into Google Sheets). There is no backend service in this repo — everything runs in the browser. Google Sheets credentials are loaded from environment variables. Copy `.env.sample` to `.env` before running the app or Cypress tests.
 
 ### Services / commands
 Standard scripts live in `package.json`. Key ones:
@@ -16,7 +16,7 @@ Standard scripts live in `package.json`. Key ones:
 - E2E: Cypress (`npm run cypress:run`) targets `http://localhost:8080`, so the dev server must be running first. Cypress is not run on Vercel.
 
 ### Non-obvious gotchas
-- To exercise the app without real Google auth, use **Dev Mode login**: on `/login`, triple-click the "Welcome back" title to reveal a "Use Dev Mode Login" button (only available when `NODE_ENV !== 'production'`, i.e. under `npm run dev`). It stores a mock user in `localStorage` (`dev_mode_user`).
+- To exercise the app without real Google auth, use **Dev Mode login**: on `/login`, triple-click the "Welcome back" title to reveal a "Use Dev Mode Login" button (only available when `NODE_ENV !== 'production'`, i.e. under `npm run dev`). It stores a mock user in `localStorage` (`dev_mode_user`) and bypasses the Google Sheets login gate. Uploading to Sheets still needs a real or mocked Sheets token.
 - The home upload area is empty until you create a user with at least one bank assigned via `/settings` → User Management, then select that user on the home page. Users are persisted in `localStorage`, not a database.
 - After uploading a bank file, the app parses it and shows "Review and categorize your N transactions". The **per-transaction list only renders after an ML model is trained** (TensorFlow.js model stored in IndexedDB via the Categorization Trainer). Without a trained model, `CategorizationPredictor` intentionally shows a "No trained model available" card — this is expected, not a bug.
 - Uploading to Google Sheets requires a real Google OAuth token (set via `/dev` page or the Google Sheets auth flow); parsing/preview works fully offline without it.
