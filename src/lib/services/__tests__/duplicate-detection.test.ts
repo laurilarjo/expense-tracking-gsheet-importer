@@ -5,27 +5,27 @@ import { parseNordeaFiFile } from "../../parsers/nordea-fi-parse";
 import { GoogleSheetsService } from "../google-sheets-service";
 import { Transaction } from "../../types/transaction";
 
-function fileFromPath(relPath: string): File {
-  const buffer = readFileSync(path.join(process.cwd(), relPath));
-  return new File([buffer], path.basename(relPath));
+function fileFromFixture(name: string): File {
+  const buffer = readFileSync(path.join(process.cwd(), "test-fixtures", name));
+  return new File([buffer], name);
 }
 
 describe("GoogleSheetsService duplicate detection", () => {
   const service = GoogleSheetsService.getInstance() as any;
 
   it("treats perfect sheet round-trip as all duplicates", async () => {
-    const txs = await parseNordeaFiFile(fileFromPath("nordea 2024.csv"));
+    const txs = await parseNordeaFiFile(fileFromFixture("nordea-fi-sample.csv"));
     const existing = service.mapRowsToTransactions(service.mapTransactionsToRows(txs), "test");
     expect(service.findNewTransactions(txs, existing)).toHaveLength(0);
   });
 
   it("matches Finnish-locale formatted amounts and dot dates from Sheets", async () => {
-    const txs = await parseNordeaFiFile(fileFromPath("nordea 2024.csv"));
+    const txs = await parseNordeaFiFile(fileFromFixture("nordea-fi-sample.csv"));
     const finnishRows = service.mapTransactionsToRows(txs).map((r: (string | number)[]) => [
       r[0],
       r[1],
-      String(r[2]).replace(/\//g, "."), // 05.04.2024
-      String(r[3]).replace(".", ","), // -1249,74
+      String(r[2]).replace(/\//g, "."), // 28.08.2019
+      String(r[3]).replace(".", ","), // -1446,59
       String(r[4]).replace(".", ","),
       r[5],
       r[6],
