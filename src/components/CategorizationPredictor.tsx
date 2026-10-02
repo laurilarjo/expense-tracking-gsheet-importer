@@ -19,6 +19,7 @@ import {
 import { MLCategorizationService } from '../lib/services/ml-categorization-service';
 import { Transaction } from '../lib/types/transaction';
 import { CategorizationPrediction, ModelMetadata } from '../lib/types/categorization';
+import { applyHighConfidenceCategories } from '../lib/utils/apply-high-confidence-categories';
 
 interface CategorizationPredictorProps {
   transactions: Transaction[];
@@ -26,29 +27,6 @@ interface CategorizationPredictorProps {
   resetKey?: string;
   onPredictionsUpdate?: (predictions: CategorizationPrediction[]) => void;
   onTransactionUpdate?: (updatedTransactions: Transaction[]) => void;
-}
-
-export function applyHighConfidenceCategories(
-  transactions: Transaction[],
-  predictions: CategorizationPrediction[]
-): Transaction[] {
-  return transactions.map((transaction, index) => {
-    const prediction = predictions[index];
-    if (prediction && prediction.result.confidence >= 0.8) {
-      return {
-        ...transaction,
-        category: prediction.result.category,
-        predictedCategory: prediction.result.category,
-        categoryConfidence: prediction.result.confidence
-      };
-    }
-    return {
-      ...transaction,
-      category: undefined,
-      predictedCategory: undefined,
-      categoryConfidence: undefined
-    };
-  });
 }
 
 interface PredictionState {
