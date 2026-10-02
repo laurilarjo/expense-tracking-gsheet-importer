@@ -258,23 +258,28 @@ export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = (
             </Button>
             
             {state.predictions.length > 0 && (
-              <Button 
-                onClick={handleUploadWithCategorization}
-                disabled={isUploading}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Upload to Google Sheets
-                  </>
-                )}
-              </Button>
+              <div className="flex flex-col gap-1">
+                <Button 
+                  onClick={handleUploadWithCategorization}
+                  disabled={isUploading}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Upload to Google Sheets
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Only high confidence categories will be populated
+                </p>
+              </div>
             )}
           </div>
 
