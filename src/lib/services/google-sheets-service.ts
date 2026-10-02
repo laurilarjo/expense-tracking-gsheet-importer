@@ -22,14 +22,18 @@ export class GoogleSheetsService {
   }
 
   /**
-   * Import transactions to Google Sheets
+   * Import transactions to Google Sheets.
+   * Pass `{ dryRun: true }` to read & compare only — nothing is written.
    */
   async importToSheets(
     transactions: Transaction[], 
     context: SheetsContext,
     spreadsheetId: string,
-    accessToken: string
+    accessToken: string,
+    options: { dryRun?: boolean } = {}
   ): Promise<UploadResult> {
+    const { dryRun = false } = options;
+
     if (!transactions || transactions.length === 0) {
       console.log('No transactions to import.');
       return {
@@ -43,7 +47,7 @@ export class GoogleSheetsService {
     }
 
     try {
-      console.log(`📊 PARSED TRANSACTIONS: ${transactions.length} transactions from file`);
+      console.log(`${dryRun ? '🔎 DRY RUN' : '📊'} PARSED TRANSACTIONS: ${transactions.length} transactions from file`);
       console.log(`📋 SHEET: ${context.sheetName} (${context.user} + ${context.bank})`);
       
       // Validate transactions before processing
@@ -73,10 +77,10 @@ export class GoogleSheetsService {
       // Find new transactions (not already in sheet)
       const transactionsToWrite = this.findNewTransactions(transactions, existingTransactions);
       
-      console.log(`🆕 NEW TRANSACTIONS: ${transactionsToWrite.length} transactions to write`);
+      console.log(`🆕 NEW TRANSACTIONS: ${transactionsToWrite.length} transactions to ${dryRun ? 'preview' : 'write'}`);
       console.log(`📝 DUPLICATES FILTERED: ${transactions.length - transactionsToWrite.length} transactions already exist`);
       
-      if (transactionsToWrite.length > 0) {
+      if (transactionsToWrite.length > 0 && !dryRun) {
         await this.appendDataToSheets(
           spreadsheetId, 
           context.sheetName, 
@@ -85,6 +89,8 @@ export class GoogleSheetsService {
           needsHeaders
         );
         console.log(`✅ SUCCESS: ${transactionsToWrite.length} transactions written to Google Sheets`);
+      } else if (transactionsToWrite.length > 0 && dryRun) {
+        console.log(`🔎 DRY RUN: Would write ${transactionsToWrite.length} transactions (headers needed: ${needsHeaders})`);
       } else {
         console.log('ℹ️  INFO: No new transactions to import (all already exist)');
       }
@@ -95,11 +101,11 @@ export class GoogleSheetsService {
         existingTransactionsCount: existingTransactions.length,
         fileTransactionsCount: transactions.length,
         newTransactionsCount: transactionsToWrite.length,
-        writtenTransactionsCount: transactionsToWrite.length,
+        writtenTransactionsCount: dryRun ? 0 : transactionsToWrite.length,
         newTransactions: transactionsToWrite
       };
     } catch (error) {
-      console.error('❌ ERROR importing to Sheets:', error);
+      console.error(`❌ ERROR ${dryRun ? 'during dry run' : 'importing to Sheets'}:`, error);
       return {
         success: false,
         existingTransactionsCount: 0,
@@ -113,7 +119,19 @@ export class GoogleSheetsService {
   }
 
   /**
-   * Get existing transactions from Google Sheets
+   * Quote/encode a sheet tab for A1 notation in Sheets API URLs.
+   * Sheet names with spaces (e.g. "Lauri NordeaFI") must be single-quoted.
+   */
+  private encodeSheetRange(sheetName: string, cellRange?: string): string {
+    const quoted = `'${sheetName.replace(/'/g, "''")}'`;
+    const a1 = cellRange ? `${quoted}!${cellRange}` : quoted;
+    return encodeURIComponent(a1);
+  }
+
+  /**
+   * Get existing transactions from Google Sheets.
+   * Uses UNFORMATTED_VALUE so Finnish (and other) locales don't return
+   * comma-decimals / locale-formatted dates that break duplicate detection.
    */
   private async getDataFromSheets(
     spreadsheetId: string, 
@@ -121,8 +139,9 @@ export class GoogleSheetsService {
     accessToken: string
   ): Promise<Transaction[]> {
     try {
+      const range = this.encodeSheetRange(sheetName, 'A1:I');
       const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}!A1:I`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueRenderOption=UNFORMATTED_VALUE`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -176,7 +195,7 @@ export class GoogleSheetsService {
     }
     
     const response = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}:append?valueInputOption=RAW`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${this.encodeSheetRange(sheetName)}:append?valueInputOption=RAW`,
       {
         method: 'POST',
         headers: {
@@ -271,6 +290,91 @@ export class GoogleSheetsService {
   }
 
   /**
+   * Parse numbers from Sheets/CSV, including Finnish-locale strings ("-1 249,74").
+   */
+  private parseLocaleNumber(value: unknown): number {
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : 0;
+    }
+    if (value == null || value === '') {
+      return 0;
+    }
+
+    let s = String(value).trim().replace(/[\s\u00A0\u202F]/g, '');
+    if (!s) {
+      return 0;
+    }
+
+    if (s.includes(',') && s.includes('.')) {
+      // European 1.234,56 vs US 1,234.56 — last separator is the decimal.
+      if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
+        s = s.replace(/\./g, '').replace(',', '.');
+      } else {
+        s = s.replace(/,/g, '');
+      }
+    } else if (s.includes(',')) {
+      s = s.replace(',', '.');
+    }
+
+    const parsed = parseFloat(s);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private normalizeAmount(value: unknown): number {
+    return Math.round(this.parseLocaleNumber(value) * 100) / 100;
+  }
+
+  /**
+   * Convert Sheets serial date (days since 1899-12-30) to a UTC calendar date.
+   */
+  private sheetsSerialToUtcDate(serial: number): Date {
+    return new Date(Date.UTC(1899, 11, 30) + Math.round(serial) * 86400000);
+  }
+
+  /**
+   * Normalize dates to YYYY-MM-DD for comparison.
+   * Accepts app format DD/MM/YYYY, Finnish D.M.YYYY, ISO, and Sheets serials.
+   */
+  private normalizeDateKey(value: unknown): string {
+    if (value == null || value === '') {
+      return '';
+    }
+
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      // Likely a Sheets serial (typical range ~30000–60000 for modern dates)
+      if (value > 20000 && value < 100000) {
+        const d = this.sheetsSerialToUtcDate(value);
+        return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+      }
+      return '';
+    }
+
+    const s = String(value).trim();
+    const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) {
+      return `${iso[1]}-${iso[2]}-${iso[3]}`;
+    }
+
+    // DD/MM/YYYY, D/M/YYYY, DD.MM.YYYY, D.M.YYYY
+    const dmy = s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);
+    if (dmy) {
+      return `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
+    }
+
+    return s.toLowerCase();
+  }
+
+  /** Convert sheet/file date values to the app's DD/MM/YYYY canonical form. */
+  private toAppDateString(value: unknown): string {
+    const key = this.normalizeDateKey(value);
+    const match = key.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) {
+      return value == null ? '' : String(value);
+    }
+    return `${match[3]}/${match[2]}/${match[1]}`;
+  }
+
+  /**
    * Compare two transactions for equality
    * Handles type mismatches between Google Sheets (strings) and CSV data (parsed types)
    */
@@ -281,22 +385,15 @@ export class GoogleSheetsService {
     };
 
     const normalizeNumber = (num: number | string): number => {
-      const parsed = typeof num === 'string' ? parseFloat(num) : num;
-      return isNaN(parsed) ? 0 : parsed;
-    };
-
-    const normalizeAmount = (amount: number | string): number => {
-      const normalized = normalizeNumber(amount);
-      // Round to 2 decimal places to handle floating point precision issues
-      return Math.round(normalized * 100) / 100;
+      return this.parseLocaleNumber(num);
     };
 
     // Compare normalized values
     const monthEqual = normalizeNumber(t1.month) === normalizeNumber(t2.month);
     const yearEqual = normalizeNumber(t1.year) === normalizeNumber(t2.year);
-    const dateEqual = normalizeString(t1.date) === normalizeString(t2.date);
-    const amountEqual = normalizeAmount(t1.amount) === normalizeAmount(t2.amount);
-    const amountEurEqual = normalizeAmount(t1.amountEur) === normalizeAmount(t2.amountEur);
+    const dateEqual = this.normalizeDateKey(t1.date) === this.normalizeDateKey(t2.date);
+    const amountEqual = this.normalizeAmount(t1.amount) === this.normalizeAmount(t2.amount);
+    const amountEurEqual = this.normalizeAmount(t1.amountEur) === this.normalizeAmount(t2.amountEur);
     const payeeEqual = normalizeString(t1.payee) === normalizeString(t2.payee);
     // Special handling for transactionType field - normalize empty states
     const normalizeTransactionType = (type: string): string => {
@@ -400,13 +497,13 @@ export class GoogleSheetsService {
       return dataRows.map(row => {
         try {
           return new Transaction({
-            month: parseInt(String(row[0])) || 0,
-            year: parseInt(String(row[1])) || 0,
-            date: String(row[2]) || '',
-            amount: parseFloat(String(row[3])) || 0,
-            amountEur: parseFloat(String(row[4])) || 0,
-            payee: String(row[5]) || '',
-            transactionType: String(row[6]) || '',
+            month: Math.trunc(this.parseLocaleNumber(row[0])) || 0,
+            year: Math.trunc(this.parseLocaleNumber(row[1])) || 0,
+            date: this.toAppDateString(row[2]),
+            amount: this.parseLocaleNumber(row[3]),
+            amountEur: this.parseLocaleNumber(row[4]),
+            payee: String(row[5] ?? '') || '',
+            transactionType: String(row[6] ?? '') || '',
             message: this.safeString(row[7]),
             category: this.safeString(row[8]) || undefined
           });
@@ -437,16 +534,20 @@ export class GoogleSheetsService {
       return false;
     }
 
-    // Check if month column (index 0) contains non-numeric data
-    const monthValue = String(firstRow[0]);
-    const isMonthNumeric = !isNaN(parseInt(monthValue)) && parseInt(monthValue) > 0 && parseInt(monthValue) <= 12;
-    
-    // Check if amount column (index 3) contains non-numeric data
-    const amountValue = String(firstRow[3]);
-    const isAmountNumeric = !isNaN(parseFloat(amountValue));
-    
-    // If month is not numeric or amount is not numeric, likely headers
-    return !isMonthNumeric || !isAmountNumeric;
+    const month = this.parseLocaleNumber(firstRow[0]);
+    const isMonthNumeric = Number.isFinite(month) && month >= 1 && month <= 12
+      && String(firstRow[0]).trim() !== ''
+      && !/^[a-zA-Z]/.test(String(firstRow[0]).trim());
+
+    const amountRaw = firstRow[3];
+    const amountIsBlank = amountRaw == null || String(amountRaw).trim() === '';
+    const amount = this.parseLocaleNumber(amountRaw);
+    // Header labels like "Amount" parse to 0 — treat non-numeric labels as headers.
+    const amountLooksNumeric = !amountIsBlank && (
+      typeof amountRaw === 'number' || /[-+]?\d/.test(String(amountRaw))
+    ) && Number.isFinite(amount);
+
+    return !isMonthNumeric || !amountLooksNumeric;
   }
 
   /**
@@ -460,7 +561,7 @@ export class GoogleSheetsService {
     try {
       // Since we know the sheet is empty (no transactions), check if there are any raw rows
       const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}!A1:I1`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${this.encodeSheetRange(sheetName, 'A1:I1')}?valueRenderOption=UNFORMATTED_VALUE`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,

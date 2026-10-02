@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, Building2, User, BarChart3, Calendar, Euro, User as UserIcon, Tag, Loader2, CheckCircle, Upload } from "lucide-react";
+import { CheckCircle2, Building2, User, BarChart3, Calendar, Euro, User as UserIcon, Tag, Loader2, CheckCircle, Upload, Eye } from "lucide-react";
 import { parseOPFile } from "@/lib/parsers/op-parse";
 import { parseOPCreditCardFile } from "@/lib/parsers/op-credit-card-parse";
 import { parseNordeaFiFile } from "@/lib/parsers/nordea-fi-parse";
@@ -41,6 +41,7 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
   const [categorizationPredictions, setCategorizationPredictions] = useState<CategorizationPrediction[]>([]);
   const [categorizationSkipped, setCategorizationSkipped] = useState(false);
   const [sheetsUploadDone, setSheetsUploadDone] = useState(false);
+  const [isDryRunning, setIsDryRunning] = useState(false);
   
   const selectedUser = settings.users.find(user => user.id === settings.lastSelectedUser);
   const userBanks = selectedUser ? selectedUser.allowedBanks : [];
@@ -48,6 +49,7 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
   const hasParsedFile = parsedTransactions.length > 0;
   const categorizationComplete = categorizationPredictions.length > 0 || categorizationSkipped;
   const isSheetsUploading = Boolean(currentBankKey && isUploading[currentBankKey]);
+  const isSheetsBusy = isSheetsUploading || isDryRunning;
 
   useEffect(() => {
     refreshSettings();
@@ -130,7 +132,12 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
     setParsedTransactions(updatedTransactions);
   };
 
-  const proceedWithUpload = async (categorizedTransactions?: Transaction[]) => {
+  const proceedWithUpload = async (
+    categorizedTransactions?: Transaction[],
+    options: { dryRun?: boolean } = {}
+  ) => {
+    const { dryRun = false } = options;
+
     if (!selectedUser || !settings.googleSheetsId) {
       onUploadError("No user selected or Google Sheets not configured");
       return;
@@ -142,8 +149,12 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
     }
 
     try {
-      setIsUploading(prev => ({ ...prev, [currentBankKey]: true }));
-      setUploadProgress(prev => ({ ...prev, [currentBankKey]: 75 }));
+      if (dryRun) {
+        setIsDryRunning(true);
+      } else {
+        setIsUploading(prev => ({ ...prev, [currentBankKey]: true }));
+        setUploadProgress(prev => ({ ...prev, [currentBankKey]: 75 }));
+      }
       
       const tokenData = localStorage.getItem("google_sheets_token");
       if (!tokenData) {
@@ -159,40 +170,56 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
         transactionsToUpload, 
         context, 
         settings.googleSheetsId, 
-        token
+        token,
+        { dryRun }
       );
       
       const summary: UploadSummary = {
         fileName: `File for ${currentBankKey}`,
         bankName: `${selectedUser.name} - ${BANK_CONFIG[currentBankKey as Bank]?.name}`,
         result: uploadResult,
-        timestamp: new Date()
+        timestamp: new Date(),
+        isDryRun: dryRun,
       };
       
       setUploadSummaries(prev => [...prev, summary]);
       
       if (uploadResult.success) {
-        setUploadComplete(prev => ({ ...prev, [currentBankKey]: true }));
-        setSheetsUploadDone(true);
-        onUploadSuccess(`File for ${currentBankKey}`, BANK_CONFIG[currentBankKey as Bank]?.name || 'Unknown Bank');
+        if (!dryRun) {
+          setUploadComplete(prev => ({ ...prev, [currentBankKey]: true }));
+          setSheetsUploadDone(true);
+          onUploadSuccess(`File for ${currentBankKey}`, BANK_CONFIG[currentBankKey as Bank]?.name || 'Unknown Bank');
+        }
       } else {
-        const errorMessage = uploadResult.error || 'Unknown error occurred during upload';
-        onUploadError(`Failed to upload to Google Sheets: ${errorMessage}`);
+        const errorMessage = uploadResult.error || `Unknown error occurred during ${dryRun ? 'dry run' : 'upload'}`;
+        onUploadError(`Failed to ${dryRun ? 'dry-run' : 'upload to'} Google Sheets: ${errorMessage}`);
       }
     } catch (sheetsError) {
-      console.error('Error uploading to Google Sheets:', sheetsError);
-      onUploadError(`Failed to upload to Google Sheets: ${sheetsError instanceof Error ? sheetsError.message : 'Unknown error'}`);
+      console.error(`Error during Google Sheets ${dryRun ? 'dry run' : 'upload'}:`, sheetsError);
+      onUploadError(`Failed to ${dryRun ? 'dry-run' : 'upload to'} Google Sheets: ${sheetsError instanceof Error ? sheetsError.message : 'Unknown error'}`);
     } finally {
-      setIsUploading(prev => ({ ...prev, [currentBankKey]: false }));
+      if (dryRun) {
+        setIsDryRunning(false);
+      } else {
+        setIsUploading(prev => ({ ...prev, [currentBankKey]: false }));
+      }
     }
   };
 
-  const handleUploadToSheets = async () => {
+  const prepareTransactionsForUpload = (): Transaction[] => {
     const categorized = categorizationPredictions.length > 0
       ? applyHighConfidenceCategories(parsedTransactions, categorizationPredictions)
       : parsedTransactions;
     setParsedTransactions(categorized);
-    await proceedWithUpload(categorized);
+    return categorized;
+  };
+
+  const handleUploadToSheets = async () => {
+    await proceedWithUpload(prepareTransactionsForUpload());
+  };
+
+  const handleDryRun = async () => {
+    await proceedWithUpload(prepareTransactionsForUpload(), { dryRun: true });
   };
 
   const handleSkipCategorization = () => {
@@ -357,7 +384,7 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
             <Button
               onClick={handleSkipCategorization}
               variant="outline"
-              disabled={isSheetsUploading || categorizationPredictions.length > 0}
+              disabled={isSheetsBusy || categorizationPredictions.length > 0}
             >
               Skip categorization
             </Button>
@@ -374,25 +401,44 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
       >
         {categorizationComplete ? (
           <div className="space-y-3">
-            <Button
-              onClick={handleUploadToSheets}
-              disabled={isSheetsUploading || !hasParsedFile}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              {isSheetsUploading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Upload to Google Sheets
-                </>
-              )}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={handleDryRun}
+                disabled={isSheetsBusy || !hasParsedFile}
+                variant="outline"
+              >
+                {isDryRunning ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Comparing...
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Dry Run
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={handleUploadToSheets}
+                disabled={isSheetsBusy || !hasParsedFile}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                {isSheetsUploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Upload to Google Sheets
+                  </>
+                )}
+              </Button>
+            </div>
             <p className="text-xs text-muted-foreground">
-              Only high confidence categories will be populated
+              Dry Run reads the sheet and shows what would change — nothing is written. Only high confidence categories will be populated on upload.
             </p>
             <p className="text-sm text-muted-foreground">
               {parsedTransactions.length} transaction{parsedTransactions.length === 1 ? '' : 's'} ready to upload
@@ -428,14 +474,17 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
                     <h5 className="font-medium">{summary.fileName}</h5>
                     <p className="text-sm text-muted-foreground">
                       {summary.bankName} • {summary.timestamp.toLocaleString()}
+                      {summary.isDryRun ? ' • Dry run (no writes)' : ''}
                     </p>
                   </div>
                   <div className={`px-3 py-1 rounded-full text-sm ${
-                    summary.result.success 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
+                    !summary.result.success
+                      ? 'bg-red-100 text-red-800'
+                      : summary.isDryRun
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-green-100 text-green-800'
                   }`}>
-                    {summary.result.success ? 'Success' : 'Failed'}
+                    {!summary.result.success ? 'Failed' : summary.isDryRun ? 'Dry Run' : 'Success'}
                   </div>
                 </div>
 
@@ -454,8 +503,14 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
                       <div className="text-sm text-muted-foreground">New Transactions</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-orange-600">{summary.result.writtenTransactionsCount}</div>
-                      <div className="text-sm text-muted-foreground">Written to Sheet</div>
+                      <div className="text-2xl font-bold text-orange-600">
+                        {summary.isDryRun
+                          ? summary.result.newTransactionsCount
+                          : summary.result.writtenTransactionsCount}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {summary.isDryRun ? 'Would Write to Sheet' : 'Written to Sheet'}
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -466,7 +521,9 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
 
                 {summary.result.success && summary.result.newTransactions.length > 0 && (
                   <div className="space-y-2">
-                    <h6 className="font-medium text-sm">New Transactions Added:</h6>
+                    <h6 className="font-medium text-sm">
+                      {summary.isDryRun ? 'Transactions That Would Be Added:' : 'New Transactions Added:'}
+                    </h6>
                     <div className="max-h-40 overflow-y-auto space-y-1">
                       {summary.result.newTransactions.map((transaction, txIndex) => (
                         <div key={txIndex} className="text-xs bg-gray-50 p-2 rounded flex items-center gap-2">

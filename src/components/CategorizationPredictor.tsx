@@ -1,8 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from './ui/accordion';
 import { 
   Brain, 
   AlertCircle, 
@@ -221,64 +227,66 @@ export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = (
       )}
 
       {state.predictions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Target className="h-5 w-5" />
-              Categorization Predictions
-            </CardTitle>
-            <CardDescription>
-              Showing {state.predictions.length} predictions
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {state.predictions.map((prediction, index) => {
-              const transaction = prediction.transaction;
-              const result = prediction.result;
-              
-              return (
-                <div key={index} className="border rounded-lg p-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium truncate">{transaction.payee}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {transaction.date} • {transaction.amountEur.toFixed(2)} €
-                        </span>
-                      </div>
-                      {transaction.message && (
-                        <div className="text-xs text-muted-foreground truncate">
-                          "{transaction.message}"
+        <Accordion type="single" collapsible className="rounded-lg border px-4">
+          <AccordionItem value="predictions" className="border-b-0">
+            <AccordionTrigger className="hover:no-underline">
+              <span className="flex items-center gap-2 text-base font-semibold">
+                <Target className="h-5 w-5" />
+                Categorization Predictions
+                <span className="text-sm font-normal text-muted-foreground">
+                  ({state.predictions.length})
+                </span>
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="space-y-4">
+              {state.predictions.map((prediction, index) => {
+                const transaction = prediction.transaction;
+                const result = prediction.result;
+                
+                return (
+                  <div key={index} className="border rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium truncate">{transaction.payee}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {transaction.date} • {transaction.amountEur.toFixed(2)} €
+                          </span>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Badge variant={getConfidenceBadgeVariant(result.confidence)} className="text-xs">
-                        {Math.round(result.confidence * 100)}%
-                      </Badge>
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
-                        {result.category}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {result.alternatives.length > 0 && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-muted-foreground">Alternatives:</span>
-                      <div className="flex flex-wrap gap-1">
-                        {result.alternatives.slice(0, 2).map((alt, altIndex) => (
-                          <Badge key={altIndex} variant="outline" className="text-xs">
-                            {alt.category} ({Math.round(alt.confidence * 100)}%)
-                          </Badge>
-                        ))}
+                        {transaction.message && (
+                          <div className="text-xs text-muted-foreground truncate">
+                            "{transaction.message}"
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge variant={getConfidenceBadgeVariant(result.confidence)} className="text-xs">
+                          {Math.round(result.confidence * 100)}%
+                        </Badge>
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                          {result.category}
+                        </Badge>
                       </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
+
+                    {result.alternatives.length > 0 && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground">Alternatives:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {result.alternatives.slice(0, 2).map((alt, altIndex) => (
+                            <Badge key={altIndex} variant="outline" className="text-xs">
+                              {alt.category} ({Math.round(alt.confidence * 100)}%)
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       )}
 
       {state.predictions.length === 0 && !state.isProcessing && (

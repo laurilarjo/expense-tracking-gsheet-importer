@@ -15,4 +15,6 @@ export interface UploadSummary {
   bankName: string;
   result: UploadResult;
   timestamp: Date;
+  /** True when the summary came from a dry run (no writes). */
+  isDryRun?: boolean;
 }
