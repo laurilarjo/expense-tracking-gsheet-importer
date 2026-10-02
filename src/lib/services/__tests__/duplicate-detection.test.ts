@@ -5,13 +5,26 @@ import { parseNordeaFiFile } from "../../parsers/nordea-fi-parse";
 import { GoogleSheetsService } from "../google-sheets-service";
 import { Transaction } from "../../types/transaction";
 
+/** Private helpers exercised via cast — keep in sync with GoogleSheetsService. */
+type DuplicateDetectionInternals = {
+  mapRowsToTransactions(rows: (string | number)[][], sheetName?: string): Transaction[];
+  mapTransactionsToRows(transactions: Transaction[]): (string | number)[][];
+  findNewTransactions(
+    newTransactions: Transaction[],
+    existingTransactions: Transaction[]
+  ): Transaction[];
+  parseLocaleNumber(value: unknown): number;
+  toAppDateString(value: unknown): string;
+  areTransactionsEqual(t1: Transaction, t2: Transaction): boolean;
+};
+
 function fileFromFixture(name: string): File {
   const buffer = readFileSync(path.join(process.cwd(), "test-fixtures", name));
   return new File([buffer], name);
 }
 
 describe("GoogleSheetsService duplicate detection", () => {
-  const service = GoogleSheetsService.getInstance() as any;
+  const service = GoogleSheetsService.getInstance() as unknown as DuplicateDetectionInternals;
 
   it("treats perfect sheet round-trip as all duplicates", async () => {
     const txs = await parseNordeaFiFile(fileFromFixture("nordea-fi-sample.csv"));
