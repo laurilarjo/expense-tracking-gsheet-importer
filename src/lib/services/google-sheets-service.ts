@@ -22,14 +22,18 @@ export class GoogleSheetsService {
   }
 
   /**
-   * Import transactions to Google Sheets
+   * Import transactions to Google Sheets.
+   * Pass `{ dryRun: true }` to read & compare only — nothing is written.
    */
   async importToSheets(
     transactions: Transaction[], 
     context: SheetsContext,
     spreadsheetId: string,
-    accessToken: string
+    accessToken: string,
+    options: { dryRun?: boolean } = {}
   ): Promise<UploadResult> {
+    const { dryRun = false } = options;
+
     if (!transactions || transactions.length === 0) {
       console.log('No transactions to import.');
       return {
@@ -43,7 +47,7 @@ export class GoogleSheetsService {
     }
 
     try {
-      console.log(`📊 PARSED TRANSACTIONS: ${transactions.length} transactions from file`);
+      console.log(`${dryRun ? '🔎 DRY RUN' : '📊'} PARSED TRANSACTIONS: ${transactions.length} transactions from file`);
       console.log(`📋 SHEET: ${context.sheetName} (${context.user} + ${context.bank})`);
       
       // Validate transactions before processing
@@ -73,10 +77,10 @@ export class GoogleSheetsService {
       // Find new transactions (not already in sheet)
       const transactionsToWrite = this.findNewTransactions(transactions, existingTransactions);
       
-      console.log(`🆕 NEW TRANSACTIONS: ${transactionsToWrite.length} transactions to write`);
+      console.log(`🆕 NEW TRANSACTIONS: ${transactionsToWrite.length} transactions to ${dryRun ? 'preview' : 'write'}`);
       console.log(`📝 DUPLICATES FILTERED: ${transactions.length - transactionsToWrite.length} transactions already exist`);
       
-      if (transactionsToWrite.length > 0) {
+      if (transactionsToWrite.length > 0 && !dryRun) {
         await this.appendDataToSheets(
           spreadsheetId, 
           context.sheetName, 
@@ -85,6 +89,8 @@ export class GoogleSheetsService {
           needsHeaders
         );
         console.log(`✅ SUCCESS: ${transactionsToWrite.length} transactions written to Google Sheets`);
+      } else if (transactionsToWrite.length > 0 && dryRun) {
+        console.log(`🔎 DRY RUN: Would write ${transactionsToWrite.length} transactions (headers needed: ${needsHeaders})`);
       } else {
         console.log('ℹ️  INFO: No new transactions to import (all already exist)');
       }
@@ -95,11 +101,11 @@ export class GoogleSheetsService {
         existingTransactionsCount: existingTransactions.length,
         fileTransactionsCount: transactions.length,
         newTransactionsCount: transactionsToWrite.length,
-        writtenTransactionsCount: transactionsToWrite.length,
+        writtenTransactionsCount: dryRun ? 0 : transactionsToWrite.length,
         newTransactions: transactionsToWrite
       };
     } catch (error) {
-      console.error('❌ ERROR importing to Sheets:', error);
+      console.error(`❌ ERROR ${dryRun ? 'during dry run' : 'importing to Sheets'}:`, error);
       return {
         success: false,
         existingTransactionsCount: 0,
