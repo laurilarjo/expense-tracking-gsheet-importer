@@ -13,7 +13,7 @@ Bank parser support:
 
 ## Hosting
 
-Vercel: https://expense-tracking-gsheet-importer.vercel.app/
+Vercel: https://larkki-expense-tracker.vercel.app/
 
 
 
@@ -27,17 +27,54 @@ Vercel: https://expense-tracking-gsheet-importer.vercel.app/
 1. Make a copy of this sample sheet to your own account and use it as a base (header rows come from it): [https://docs.google.com/spreadsheets/d/1F78PxLNPdAFrcS8XjPI_hTAyh4knTVqq8kd-8ilmDSA/](https://docs.google.com/spreadsheets/d/1F78PxLNPdAFrcS8XjPI_hTAyh4knTVqq8kd-8ilmDSA/).
 1. Create and name the data sheets like this: If your name is `Aurelius` and your bank is `OP`, name the sheet `Aurelius OP`. You'll setup this in sheet-config next.
 1. Copy `sheet-config.json.sample` to `sheet-config.json`, and replace values with your own.
-1. Copy `.env.sample` to `.env` and fill in Google Sheets API credentials (`VITE_GOOGLE_API_KEY`, `VITE_GOOGLE_CLIENT_ID`).
+1. Copy `.env.sample` to `.env` and fill in Google Sheets API credentials (`VITE_GOOGLE_API_KEY`, `VITE_GOOGLE_CLIENT_ID`) from the [Google Cloud Console setup](#google-cloud-console-setup) below.
+1. OPTIONAL. If you need exchange rates, create a free account to [https://exchangeratesapi.io/](https://exchangeratesapi.io/) and add the access key in the app settings (or via exchange-rate config).
 
-1. Go here and complete the "prerequisites" section: [https://developers.google.com/sheets/api/quickstart/nodejs](https://developers.google.com/sheets/api/quickstart/nodejs).
-    1. Create a project in Google Cloud Platform
-    1. Go to "APIs and Services" and enable the Google Sheets API for it
-    1. Go to Credentials -section under the APIs and Services, and create OAuth 2 client ID credentials for a desktop app. Download the resulting json file, rename it to `credentials.json` and put to root of this project.
-    1. Go to OAuth Consent Screen -section under the APIs and Services, and add your gmail-account to a test user list.
-    1. Run the app with `npm start`. Select `Nothing`, then your user, and whatever bank. Last select `LoginToSheets`.
-    1. This should trigger OAuth flow. Follow instructions, and you end up with a `token.json` in your root folder. After this you can start using the app.
+## Google Cloud Console setup
 
-2. OPTIONAL. If you need exchange rates, create a free account to [https://exchangeratesapi.io/](https://exchangeratesapi.io/) and add access-key to .env.
+Create a Google Cloud project, then under **APIs & Services**:
+
+1. Enable **Google Sheets API** (and any APIs listed under the API key restrictions below if not already enabled).
+2. Configure the **OAuth consent screen** and add your Google account as a test user if the app is still in testing mode.
+3. Create **two credentials** under **Credentials**.
+
+### 1. API Key (Browser key)
+
+Create an **API key** and configure it as a browser key:
+
+**API restrictions** — restrict the key to these APIs:
+
+* Google Sheets API
+* Identity Toolkit API
+* Token Service API
+
+**Application restrictions** → **Websites** (HTTP referrers), then add the origins you will run the app from, for example:
+
+* `http://localhost:8080/*`
+* `https://your-production-domain.vercel.app/*`
+
+Copy the key into `.env` as `VITE_GOOGLE_API_KEY`.
+
+### 2. OAuth 2.0 Client ID
+
+Create an **OAuth 2.0 Client ID** of type **Web application**. Configure **Authorized JavaScript origins** and **Authorized redirect URIs** for local development and your production host.
+
+Example settings:
+
+![OAuth 2.0 Client ID settings](docs/oauth-client-id-settings.png)
+
+Match the screenshot (swap in your own production host if different):
+
+* **Authorized JavaScript origins**
+  * `http://localhost`
+  * `http://localhost:8080`
+  * `https://larkki-expense-tracker.vercel.app` (your hosting domain here)
+* **Authorized redirect URIs**
+  * `https://developers.google.com/oauthplayground` (for manual token testing via `/dev`)
+  * `http://localhost:8080/auth/callback`
+  * `https://larkki-expense-tracker.vercel.app/auth/callback` (your hosting domain here)
+
+Copy the client ID into `.env` as `VITE_GOOGLE_CLIENT_ID`.
  
 # Using the app
 
