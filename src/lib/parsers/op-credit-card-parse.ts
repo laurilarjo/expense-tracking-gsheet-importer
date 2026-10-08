@@ -1,5 +1,6 @@
 import { Transaction } from '../types/transaction';
 import { createDOMParser } from '../utils/dom-parser';
+import { log } from '../utils/logger';
 
 /**
  * Parses OP Credit Card statement files in Finvoice XML format.
@@ -26,6 +27,7 @@ export async function parseOPCreditCardFile(file: File): Promise<Transaction[]> 
     if (tx) transactions.push(tx);
   });
 
+  log.debug('OP Credit Card parse results:', transactions);
   return transactions;
 }
 

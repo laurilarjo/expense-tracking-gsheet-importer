@@ -2,6 +2,7 @@ import * as XLSX from 'xlsx';
 import dayjs from 'dayjs';
 import { Transaction } from '../types/transaction';
 import { convertSEKToEur } from '../services/exchange-rate-service';
+import { log } from '../utils/logger';
 
 /**
  * Parses Nordea Sweden transaction files in XLSX format
@@ -40,6 +41,7 @@ export async function parseNordeaSeFile(file: File): Promise<Transaction[]> {
       return dateA - dateB;
     });
 
+    log.debug('Nordea-SE-parse results:', transactions);
     return transactions;
   } catch (error) {
     throw new Error(`XLSX parsing error: ${error instanceof Error ? error.message : 'Unknown error'}`);

@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import dayjs from 'dayjs';
 import { Transaction } from '../types/transaction';
+import { log } from '../utils/logger';
 
 /**
  * Parses Nordea Finland bank's transaction files in CSV format
@@ -29,6 +30,7 @@ export async function parseNordeaFiFile(file: File): Promise<Transaction[]> {
           // Reverse to get correct chronological order (oldest first)
           const transactionCorrectOrder = transactions.slice().reverse();
 
+          log.debug('NordeaFI-parse results:', transactionCorrectOrder);
           resolve(transactionCorrectOrder);
         } catch (error) {
           reject(error);

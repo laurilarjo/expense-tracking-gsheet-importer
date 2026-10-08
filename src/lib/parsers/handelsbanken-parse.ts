@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import { Transaction } from '../types/transaction';
 import { convertSEKToEur } from '../services/exchange-rate-service';
 import { createDOMParser } from '../utils/dom-parser';
+import { log } from '../utils/logger';
 
 /**
  * Parses Handelsbanken Sweden transaction files.
@@ -49,6 +50,7 @@ export async function parseHandelsbankenFile(file: File): Promise<Transaction[]>
       return dateA - dateB;
     });
 
+    log.debug('Handelsbanken-parse results:', transactions);
     return transactions;
   } catch (error) {
     throw new Error(

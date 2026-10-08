@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import dayjs from 'dayjs';
 import { Transaction } from '../types/transaction';
+import { log } from '../utils/logger';
 
 /**
  * Parses Norwegian Bank credit card transaction files in XLSX format
@@ -22,6 +23,7 @@ export async function parseNorwegianFile(file: File): Promise<Transaction[]> {
       }
     });
 
+    log.debug('Norwegian-parse results:', transactions);
     return transactions;
   } catch (error) {
     throw new Error(`XLSX parsing error: ${error instanceof Error ? error.message : 'Unknown error'}`);

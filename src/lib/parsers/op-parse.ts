@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import dayjs from 'dayjs';
 import { Transaction } from '../types/transaction';
+import { log } from '../utils/logger';
 
 /**
  * Parses OP Finland bank's transaction files in CSV format
@@ -26,6 +27,7 @@ export async function parseOPFile(file: File): Promise<Transaction[]> {
             }
           });
 
+          log.debug('OP-parse results:', transactions);
           resolve(transactions);
         } catch (error) {
           reject(error);

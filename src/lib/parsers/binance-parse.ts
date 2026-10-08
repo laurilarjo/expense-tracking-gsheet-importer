@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import dayjs from 'dayjs';
 import { Transaction } from '../types/transaction';
+import { log } from '../utils/logger';
 
 /**
  * Parses Binance credit card transaction files in XLSX format
@@ -28,6 +29,7 @@ export async function parseBinanceFile(file: File): Promise<Transaction[]> {
       return dateA - dateB;
     });
 
+    log.debug('Binance-parse results:', transactions);
     return transactions;
   } catch (error) {
     throw new Error(`XLSX parsing error: ${error instanceof Error ? error.message : 'Unknown error'}`);
