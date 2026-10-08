@@ -48,6 +48,17 @@ describe('handleTelegramUpdate', () => {
     expect(res.status).toBe(401);
   });
 
+  it('rejects missing webhook secret header when secret is configured', async () => {
+    const res = await handleTelegramUpdate({}, deps);
+    expect(res.status).toBe(401);
+  });
+
+  it('allows updates without secret check when webhookSecret is unset (long-poll)', async () => {
+    const { webhookSecret: _omit, ...longPollDeps } = deps;
+    const res = await handleTelegramUpdate({}, longPollDeps);
+    expect(res.status).toBe(200);
+  });
+
   it('pairs /start token to telegram user', async () => {
     const ws = new WorkspaceService(deps.store);
     await ws.saveSettings('ws-lauri', {

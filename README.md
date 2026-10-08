@@ -92,12 +92,48 @@ The browser OAuth client above stays for the web app. The bot never stores your 
 ## Telegram bot
 
 1. Create a bot with [BotFather](https://t.me/BotFather); set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_BOT_USERNAME`.
-2. Deploy to Vercel with Blob store (`BLOB_READ_WRITE_TOKEN`) and the env vars from `.env.sample`. Set webhook:  
-   `https://api.telegram.org/bot<token>/setWebhook?url=https://<your-host>/api/telegram&secret_token=<TELEGRAM_WEBHOOK_SECRET>`
-3. Each person: open the web app → Settings → sync settings → share the sheet with the service account → **Connect Telegram** → add the bot to a channel (or tap **Join**).
-4. Local without Blob: `npm run api:dev` (filesystem `.data/blob/`) + `npm run bot:dev` (long polling). Vite proxies `/api` to port 8787.
+2. Set a strong `TELEGRAM_WEBHOOK_SECRET` (required for `/api/telegram` in production; **not** used by `bot:dev` long polling).
+3. Deploy to Vercel with Blob store (`BLOB_READ_WRITE_TOKEN`) and the env vars from `.env.sample`.
+4. Each person: open the web app → Settings → sync settings → share the sheet with the service account → **Connect Telegram** → add the bot to a channel (or tap **Join**).
+5. Local without Blob: `npm run api:dev` (filesystem `.data/blob/`) + `npm run bot:dev` (long polling). Vite proxies `/api` to port 8787. Clear any production webhook first (see below) or long polling will not receive updates.
 
 Bank statement files are **never** stored on the server or in Blob—only Telegram `file_id` session metadata.
+
+### Production webhook
+
+Telegram must POST updates to your deployed `/api/telegram`. The same random string must be in Vercel as `TELEGRAM_WEBHOOK_SECRET` and in `setWebhook` as `secret_token` (Telegram sends it as header `X-Telegram-Bot-Api-Secret-Token`).
+
+Replace `<token>`, `<your-host>`, and `<TELEGRAM_WEBHOOK_SECRET>` (URL-encode the secret if it has special characters).
+
+**Register / update the webhook:**
+
+```bash
+curl -sS "https://api.telegram.org/bot<token>/setWebhook" \
+  -d "url=https://<your-host>/api/telegram" \
+  -d "secret_token=<TELEGRAM_WEBHOOK_SECRET>"
+```
+
+**Check current webhook:**
+
+```bash
+curl -sS "https://api.telegram.org/bot<token>/getWebhookInfo"
+```
+
+You should see your `url` and `"has_custom_certificate": false`. If `last_error_message` is set, fix deploy/env (often a missing or mismatched `TELEGRAM_WEBHOOK_SECRET`).
+
+**Delete the webhook** (required before `npm run bot:dev` long polling, or when switching off production):
+
+```bash
+curl -sS "https://api.telegram.org/bot<token>/deleteWebhook"
+```
+
+Optional: drop pending updates when deleting:
+
+```bash
+curl -sS "https://api.telegram.org/bot<token>/deleteWebhook?drop_pending_updates=true"
+```
+
+After `deleteWebhook`, `getWebhookInfo` should show an empty `url`. Then local `bot:dev` can poll. To go back to production, run `setWebhook` again.
 
 # Using the app
 

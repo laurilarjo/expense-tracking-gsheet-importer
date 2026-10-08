@@ -11,12 +11,38 @@ import type {
 import type { AppSettings } from '../types/settings';
 import { randomBytes } from 'node:crypto';
 
+/** Pairing tokens are 16 random bytes as hex (32 chars). */
+const PAIRING_TOKEN_RE = /^[a-f0-9]{32}$/;
+
+/**
+ * Single blob path segment: no slashes, no nulls, not `.` / `..` / dots-only.
+ */
+export function assertSafeBlobSegment(value: string, label = 'id'): string {
+  if (
+    typeof value !== 'string' ||
+    !value ||
+    value.includes('/') ||
+    value.includes('\\') ||
+    value.includes('\0') ||
+    value === '.' ||
+    value === '..' ||
+    /^\.+$/.test(value)
+  ) {
+    throw Object.assign(new Error(`Invalid ${label}`), { status: 400 });
+  }
+  return value;
+}
+
+export function isValidPairingToken(token: string): boolean {
+  return typeof token === 'string' && PAIRING_TOKEN_RE.test(token);
+}
+
 export function workspaceSettingsKey(workspaceId: string): string {
-  return `workspaces/${workspaceId}/settings.json`;
+  return `workspaces/${assertSafeBlobSegment(workspaceId, 'workspaceId')}/settings.json`;
 }
 
 export function memberModelPrefix(workspaceId: string, memberId: string): string {
-  return `workspaces/${workspaceId}/members/${memberId}/model`;
+  return `workspaces/${assertSafeBlobSegment(workspaceId, 'workspaceId')}/members/${assertSafeBlobSegment(memberId, 'memberId')}/model`;
 }
 
 export function telegramIndexKey(telegramUserId: number): string {
@@ -28,6 +54,9 @@ export function chatIndexKey(chatId: string | number): string {
 }
 
 export function pairingKey(token: string): string {
+  if (!isValidPairingToken(token)) {
+    throw Object.assign(new Error('Invalid pairing token'), { status: 400 });
+  }
   return `pairings/${token}.json`;
 }
 
@@ -128,9 +157,11 @@ export class WorkspaceService {
   }
 
   async consumePairingToken(token: string): Promise<string | null> {
-    const payload = await this.store.getJson<PairingToken>(pairingKey(token));
+    if (!isValidPairingToken(token)) return null;
+    const key = pairingKey(token);
+    const payload = await this.store.getJson<PairingToken>(key);
     if (!payload) return null;
-    await this.store.delete(pairingKey(token));
+    await this.store.delete(key);
     if (payload.expiresAt < Date.now()) return null;
     return payload.workspaceId;
   }

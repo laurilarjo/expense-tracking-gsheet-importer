@@ -64,6 +64,10 @@ export async function resolveGoogleSubFromAccessToken(accessToken: string): Prom
       'Google tokeninfo did not return sub/email. Re-authorize with openid/email scopes.'
     );
   }
-  // Sanitize for Blob path keys
-  return id.replace(/[^a-zA-Z0-9._-]/g, '_');
+  // Sanitize for Blob path keys (single segment; reject dots-only / empty)
+  const sanitized = id.replace(/[^a-zA-Z0-9._-]/g, '_');
+  if (!sanitized || sanitized === '.' || sanitized === '..' || /^\.+$/.test(sanitized)) {
+    throw new Error('Google account id is not usable as a workspace key');
+  }
+  return sanitized;
 }

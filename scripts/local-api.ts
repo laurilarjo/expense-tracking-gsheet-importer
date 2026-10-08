@@ -60,12 +60,19 @@ const server = createServer(async (req, res) => {
 
   try {
     if (url.pathname === '/api/telegram' && req.method === 'POST') {
+      let deps;
+      try {
+        deps = createProductionBotDeps();
+      } catch (error) {
+        return send(res, 503, {
+          error: error instanceof Error ? error.message : 'Bot not configured',
+        });
+      }
       const body = await readJson(req);
       const headers = new Headers();
       for (const [k, v] of Object.entries(req.headers)) {
         if (typeof v === 'string') headers.set(k, v);
       }
-      const deps = createProductionBotDeps();
       const response = await handleTelegramUpdate(body, deps, headers);
       return send(res, response.status, await response.text());
     }

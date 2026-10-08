@@ -35,10 +35,12 @@ export async function handleTelegramUpdate(
   deps: BotDeps,
   requestHeaders?: Headers
 ): Promise<Response> {
-  if (deps.webhookSecret && requestHeaders) {
-    const secret = requestHeaders.get('x-telegram-bot-api-secret-token');
-    if (secret !== deps.webhookSecret) {
-      console.warn('[bot] rejected update: bad webhook secret');
+  // Fail closed when a webhook secret is configured (production / api:dev).
+  // Long-polling (bot:dev) omits webhookSecret and skips this check.
+  if (deps.webhookSecret) {
+    const secret = requestHeaders?.get('x-telegram-bot-api-secret-token');
+    if (!secret || secret !== deps.webhookSecret) {
+      console.warn('[bot] rejected update: bad or missing webhook secret');
       return new Response('Unauthorized', { status: 401 });
     }
   }

@@ -9,8 +9,8 @@ This is a client-side React 19 + Vite + TypeScript SPA (a bank-transaction file 
 ### Services / commands
 Standard scripts live in `package.json`. Key ones:
 - Dev server: `npm run dev` — Vite on `http://localhost:8080` (port set in `vite.config.ts`). Proxies `/api` to `http://localhost:8787`.
-- Local API: `npm run api:dev` — workspace sync + telegram webhook on port 8787 (uses `.data/blob/` when `BLOB_READ_WRITE_TOKEN` is unset).
-- Telegram long poll: `npm run bot:dev` — needs `TELEGRAM_BOT_TOKEN` (optional SA JSON for real Sheets).
+- Local API: `npm run api:dev` — workspace sync + telegram webhook on port 8787 (uses `.data/blob/` when `BLOB_READ_WRITE_TOKEN` is unset). Webhook path requires `TELEGRAM_WEBHOOK_SECRET`.
+- Telegram long poll: `npm run bot:dev` — needs `TELEGRAM_BOT_TOKEN` only (no webhook secret; optional SA JSON for real Sheets).
 - Tests: `npm run test:run` (Vitest single run) or `npm run test` (watch). Parser unit tests live in `src/lib/parsers/__tests__/`. Bot tests live in `src/lib/bot/__tests__/`.
 - Type check: `npm run check-types` (`tsc --noEmit`).
 - Build: `npm run build` (Vite production build; large-bundle chunk-size warning is expected and harmless).
