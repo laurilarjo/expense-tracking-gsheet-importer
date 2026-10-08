@@ -2,6 +2,7 @@ import { Transaction } from '../types/transaction';
 import { Bank } from '../types/bank';
 import { generateSheetName } from '../utils/sheet-naming';
 import { UploadResult } from '../types/upload-result';
+import { log } from '../utils/logger';
 
 export interface SheetsContext {
   bank: Bank;
@@ -213,7 +214,7 @@ export class GoogleSheetsService {
     }
 
     const result = await response.json();
-    console.log('Data appended successfully:', result);
+    log.debug('Data appended successfully:', result);
   }
 
   /**
@@ -221,30 +222,34 @@ export class GoogleSheetsService {
    */
   private findNewTransactions(newTransactions: Transaction[], existingTransactions: Transaction[]): Transaction[] {
     console.log(`🔍 DUPLICATE DETECTION: Checking ${newTransactions.length} new vs ${existingTransactions.length} existing`);
-    
+
     const newTransactionsFiltered = newTransactions.filter((newTransaction, index) => {
-      const isDuplicate = existingTransactions.some(existing => {
+      const isDuplicate = existingTransactions.some((existing) => {
         const isEqual = this.areTransactionsEqual(newTransaction, existing);
         if (isEqual) {
-          console.log(`🔄 DUPLICATE MATCH FOUND:`, {
+          log.debug(`🔄 DUPLICATE MATCH FOUND:`, {
             new: `${newTransaction.date} | ${newTransaction.amount} | ${newTransaction.payee} | "${newTransaction.message}"`,
-            existing: `${existing.date} | ${existing.amount} | ${existing.payee} | "${existing.message}"`
+            existing: `${existing.date} | ${existing.amount} | ${existing.payee} | "${existing.message}"`,
           });
         }
         return isEqual;
       });
-      
+
       if (isDuplicate) {
-        console.log(`🔄 DUPLICATE FOUND: Transaction ${index + 1} already exists`);
-        console.log(`   New: ${newTransaction.date} | ${newTransaction.amount} | ${newTransaction.payee} | "${newTransaction.message}"`);
+        log.debug(`🔄 DUPLICATE FOUND: Transaction ${index + 1} already exists`);
+        log.debug(
+          `   New: ${newTransaction.date} | ${newTransaction.amount} | ${newTransaction.payee} | "${newTransaction.message}"`
+        );
       } else {
-        console.log(`🆕 NEW TRANSACTION: Transaction ${index + 1} is new`);
-        console.log(`   New: ${newTransaction.date} | ${newTransaction.amount} | ${newTransaction.payee} | "${newTransaction.message}"`);
+        log.debug(`🆕 NEW TRANSACTION: Transaction ${index + 1} is new`);
+        log.debug(
+          `   New: ${newTransaction.date} | ${newTransaction.amount} | ${newTransaction.payee} | "${newTransaction.message}"`
+        );
       }
-      
+
       return !isDuplicate;
     });
-    
+
     console.log(`🔍 DUPLICATE DETECTION RESULT: ${newTransactionsFiltered.length} new transactions after filtering`);
     return newTransactionsFiltered;
   }
@@ -407,53 +412,60 @@ export class GoogleSheetsService {
       return normalized === '' || normalized === 'undefined' || normalized === 'null' ? '' : normalized;
     };
     const messageEqual = normalizeMessage(t1.message) === normalizeMessage(t2.message);
-    
-    const isEqual = monthEqual && yearEqual && dateEqual && amountEqual && amountEurEqual && payeeEqual && transactionTypeEqual && messageEqual;
-    
+
+    const isEqual =
+      monthEqual &&
+      yearEqual &&
+      dateEqual &&
+      amountEqual &&
+      amountEurEqual &&
+      payeeEqual &&
+      transactionTypeEqual &&
+      messageEqual;
+
     if (isEqual) {
-      console.log(`✅ EQUAL: ${t1.date} | ${t1.amount} | ${t1.payee}`);
+      log.debug(`✅ EQUAL: ${t1.date} | ${t1.amount} | ${t1.payee}`);
     } else {
-      // Debug logging for failed comparisons
-      console.log(`❌ NOT EQUAL:`, {
+      log.debug(`❌ NOT EQUAL:`, {
         month: { t1: t1.month, t2: t2.month, equal: monthEqual },
         year: { t1: t1.year, t2: t2.year, equal: yearEqual },
         date: { t1: t1.date, t2: t2.date, equal: dateEqual },
         amount: { t1: t1.amount, t2: t2.amount, equal: amountEqual },
         amountEur: { t1: t1.amountEur, t2: t2.amountEur, equal: amountEurEqual },
         payee: { t1: t1.payee, t2: t2.payee, equal: payeeEqual },
-        transactionType: { 
-          t1: `"${t1.transactionType}"`, 
-          t2: `"${t2.transactionType}"`, 
+        transactionType: {
+          t1: `"${t1.transactionType}"`,
+          t2: `"${t2.transactionType}"`,
           equal: transactionTypeEqual,
-          normalized: { 
-            t1: `"${normalizeTransactionType(t1.transactionType)}"`, 
-            t2: `"${normalizeTransactionType(t2.transactionType)}"` 
+          normalized: {
+            t1: `"${normalizeTransactionType(t1.transactionType)}"`,
+            t2: `"${normalizeTransactionType(t2.transactionType)}"`,
           },
           raw: {
             t1: t1.transactionType,
             t2: t2.transactionType,
             t1Type: typeof t1.transactionType,
-            t2Type: typeof t2.transactionType
-          }
+            t2Type: typeof t2.transactionType,
+          },
         },
-        message: { 
-          t1: `"${t1.message}"`, 
-          t2: `"${t2.message}"`, 
-          equal: messageEqual, 
-          normalized: { 
-            t1: `"${normalizeMessage(t1.message)}"`, 
-            t2: `"${normalizeMessage(t2.message)}"` 
+        message: {
+          t1: `"${t1.message}"`,
+          t2: `"${t2.message}"`,
+          equal: messageEqual,
+          normalized: {
+            t1: `"${normalizeMessage(t1.message)}"`,
+            t2: `"${normalizeMessage(t2.message)}"`,
           },
           raw: {
             t1: t1.message,
             t2: t2.message,
             t1Type: typeof t1.message,
-            t2Type: typeof t2.message
-          }
-        }
+            t2Type: typeof t2.message,
+          },
+        },
       });
     }
-    
+
     return isEqual;
   }
 

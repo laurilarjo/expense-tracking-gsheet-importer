@@ -376,6 +376,7 @@ export const MultiBankFileUpload = ({ onUploadSuccess, onUploadError }: MultiBan
         <div className="space-y-4">
           <CategorizationPredictor
             transactions={parsedTransactions}
+            memberId={selectedUser?.id}
             resetKey={fileSessionKey}
             onPredictionsUpdate={handlePredictionsUpdate}
             onTransactionUpdate={handleTransactionUpdate}

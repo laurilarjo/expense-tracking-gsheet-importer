@@ -8,11 +8,41 @@ import {
   normalizeText 
 } from '../utils/text-preprocessing';
 
+export interface ModelArtifactsBundle {
+  modelTopology: unknown;
+  weightSpecs: tf.io.WeightsManifestEntry[];
+  weightData: ArrayBuffer;
+  vocabulary: string[];
+  categories: string[];
+  metadata: ModelMetadata;
+}
+
 export class MLCategorizationService {
   private model: tf.LayersModel | null = null;
   private vocabulary: string[] = [];
   private categories: string[] = [];
   private metadata: ModelMetadata | null = null;
+  private memberId: string;
+
+  constructor(memberId = 'default') {
+    this.memberId = memberId;
+  }
+
+  private modelUrl(): string {
+    return `indexeddb://ml-categorization-model-${this.memberId}`;
+  }
+
+  private metaKey(): string {
+    return `ml-categorization-metadata-${this.memberId}`;
+  }
+
+  private vocabKey(): string {
+    return `ml-categorization-vocabulary-${this.memberId}`;
+  }
+
+  private categoriesKey(): string {
+    return `ml-categorization-categories-${this.memberId}`;
+  }
 
   /**
    * Train the ML model using historical transaction data
@@ -135,7 +165,7 @@ export class MLCategorizationService {
   }
 
   /**
-   * Save trained model to IndexedDB
+   * Save trained model to IndexedDB (namespaced by memberId)
    */
   async saveModelToIndexedDB(): Promise<void> {
     if (!this.model || !this.metadata) {
@@ -143,18 +173,11 @@ export class MLCategorizationService {
     }
 
     try {
-      // Save model
-      await this.model.save('indexeddb://ml-categorization-model');
-      
-      // Save metadata
-      const metadataKey = 'ml-categorization-metadata';
-      localStorage.setItem(metadataKey, JSON.stringify(this.metadata));
-      
-      // Save vocabulary and categories
-      localStorage.setItem('ml-categorization-vocabulary', JSON.stringify(this.vocabulary));
-      localStorage.setItem('ml-categorization-categories', JSON.stringify(this.categories));
-      
-      console.log('💾 Model saved to IndexedDB');
+      await this.model.save(this.modelUrl());
+      localStorage.setItem(this.metaKey(), JSON.stringify(this.metadata));
+      localStorage.setItem(this.vocabKey(), JSON.stringify(this.vocabulary));
+      localStorage.setItem(this.categoriesKey(), JSON.stringify(this.categories));
+      console.log(`💾 Model saved to IndexedDB for member ${this.memberId}`);
     } catch (error) {
       console.error('Error saving model:', error);
       throw error;
@@ -162,34 +185,91 @@ export class MLCategorizationService {
   }
 
   /**
-   * Load trained model from IndexedDB
+   * Load trained model from IndexedDB (namespaced by memberId)
    */
   async loadModelFromIndexedDB(): Promise<boolean> {
     try {
-      // Load model
-      this.model = await tf.loadLayersModel('indexeddb://ml-categorization-model');
-      
-      // Load metadata
-      const metadataStr = localStorage.getItem('ml-categorization-metadata');
+      this.model = await tf.loadLayersModel(this.modelUrl());
+
+      const metadataStr = localStorage.getItem(this.metaKey());
       if (metadataStr) {
         this.metadata = JSON.parse(metadataStr);
       }
-      
-      // Load vocabulary and categories
-      const vocabularyStr = localStorage.getItem('ml-categorization-vocabulary');
-      const categoriesStr = localStorage.getItem('ml-categorization-categories');
-      
+
+      const vocabularyStr = localStorage.getItem(this.vocabKey());
+      const categoriesStr = localStorage.getItem(this.categoriesKey());
+
       if (vocabularyStr && categoriesStr) {
         this.vocabulary = JSON.parse(vocabularyStr);
         this.categories = JSON.parse(categoriesStr);
-        
-        console.log('📂 Model loaded from IndexedDB');
+        console.log(`📂 Model loaded from IndexedDB for member ${this.memberId}`);
         return true;
       }
-      
+
       return false;
     } catch (error) {
       console.error('Error loading model:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Export model artifacts for server sync (no IndexedDB).
+   */
+  async exportModelArtifacts(): Promise<ModelArtifactsBundle> {
+    if (!this.model || !this.metadata) {
+      throw new Error('No model to export');
+    }
+
+    let captured: tf.io.ModelArtifacts | null = null;
+    await this.model.save(
+      tf.io.withSaveHandler(async (artifacts) => {
+        captured = artifacts;
+        return {
+          modelArtifactsInfo: {
+            dateSaved: new Date(),
+            modelTopologyType: 'JSON',
+          },
+        };
+      })
+    );
+
+    if (!captured) {
+      throw new Error('Failed to capture model artifacts');
+    }
+
+    const arts = captured as tf.io.ModelArtifacts;
+    return {
+      modelTopology: arts.modelTopology,
+      weightSpecs: arts.weightSpecs || [],
+      weightData: arts.weightData as ArrayBuffer,
+      vocabulary: this.vocabulary,
+      categories: this.categories,
+      metadata: this.metadata,
+    };
+  }
+
+  /**
+   * Load model from in-memory / Blob artifacts (server & tests).
+   */
+  async loadFromArtifacts(bundle: ModelArtifactsBundle): Promise<boolean> {
+    try {
+      this.model = await tf.loadLayersModel(
+        tf.io.fromMemory({
+          modelTopology: bundle.modelTopology,
+          weightSpecs: bundle.weightSpecs,
+          weightData: bundle.weightData,
+        })
+      );
+      this.vocabulary = bundle.vocabulary;
+      this.categories = bundle.categories;
+      this.metadata = {
+        ...bundle.metadata,
+        trainingDate: new Date(bundle.metadata.trainingDate),
+      };
+      return true;
+    } catch (error) {
+      console.error('Error loading model from artifacts:', error);
       return false;
     }
   }

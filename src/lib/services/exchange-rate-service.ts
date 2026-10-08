@@ -26,11 +26,18 @@ const fetchMonthRate = async (date: string, currency: string, apiKey?: string): 
     throw new Error('Non-supported currency: ' + currency);
   }
   
-  // Use provided API key or get from settings
-  const settingsService = SettingsService.getInstance();
-  const settings = settingsService.getSettings();
-  const finalApiKey = apiKey || settings.exchangeratesApiKey;
-  
+  // explicit arg → browser settings → process.env (bot / serverless)
+  let settingsKey = '';
+  try {
+    const settingsService = SettingsService.getInstance();
+    settingsKey = settingsService.getSettings().exchangeratesApiKey || '';
+  } catch {
+    // SettingsService may be unavailable outside the browser
+  }
+  const envKey =
+    typeof process !== 'undefined' ? process.env.EXCHANGERATES_API_KEY || '' : '';
+  const finalApiKey = apiKey || settingsKey || envKey;
+
   if (!finalApiKey) {
     throw new Error('Exchange rates API key not configured. Please add it in Settings.');
   }

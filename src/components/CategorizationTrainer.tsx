@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -10,6 +10,7 @@ import { Separator } from './ui/separator';
 import { Loader2, CheckCircle, AlertCircle, Brain, Database, BarChart3 } from 'lucide-react';
 import { GoogleSheetsService } from '../lib/services/google-sheets-service';
 import { MLCategorizationService } from '../lib/services/ml-categorization-service';
+import { syncMemberModel, syncWorkspaceSettings } from '../lib/services/workspace-sync-client';
 import { Transaction } from '../lib/types/transaction';
 import { ModelMetadata } from '../lib/types/categorization';
 import { generateUserSheetNames } from '../lib/utils/sheet-naming';
@@ -56,7 +57,14 @@ export const CategorizationTrainer: React.FC<CategorizationTrainerProps> = ({
   const [modelMetadata, setModelMetadata] = useState<ModelMetadata | null>(null);
 
   const sheetsService = GoogleSheetsService.getInstance();
-  const mlService = new MLCategorizationService();
+  const trainMemberId =
+    settings.lastSelectedUser || settings.users[0]?.id || 'default';
+  const trainMemberName =
+    settings.users.find((u) => u.id === trainMemberId)?.name || 'selected user';
+  const mlService = useMemo(
+    () => new MLCategorizationService(trainMemberId),
+    [trainMemberId]
+  );
 
   // Get all valid sheet names from all users
   const getAllValidSheetNames = (): string[] => {
@@ -191,12 +199,27 @@ export const CategorizationTrainer: React.FC<CategorizationTrainerProps> = ({
       setModelMetadata(metadata);
 
       setProgress({ stage: 'saving', message: 'Saving model...', progress: 90 });
-      
-      // Save the model
+
       await mlService.saveModelToIndexedDB();
-      
-      setProgress({ stage: 'complete', message: 'Training completed successfully!', progress: 100 });
-      
+
+      let botSynced = false;
+      try {
+        await syncWorkspaceSettings(settings);
+        const artifacts = await mlService.exportModelArtifacts();
+        await syncMemberModel(trainMemberId, artifacts);
+        botSynced = true;
+      } catch (syncError) {
+        console.warn('Model saved locally but bot sync failed:', syncError);
+      }
+
+      setProgress({
+        stage: 'complete',
+        message: botSynced
+          ? `Training completed for ${trainMemberName}! Model synced for Telegram.`
+          : `Training completed for ${trainMemberName} (local only). Start api:dev, authorize Sheets, then retrain to sync for Telegram.`,
+        progress: 100,
+      });
+
       if (onTrainingComplete) {
         onTrainingComplete(metadata);
       }
@@ -219,8 +242,9 @@ export const CategorizationTrainer: React.FC<CategorizationTrainerProps> = ({
             ML Model Training
           </CardTitle>
           <CardDescription>
-            Train a machine learning model using your historical transaction data with categories.
-            Provide URLs to Google Sheets containing categorized transactions.
+            Train a machine learning model for <strong>{trainMemberName}</strong> (last selected
+            user on the home page). Provide URLs to Google Sheets containing categorized
+            transactions. After training, the model is synced for the Telegram bot when possible.
             <br />
             <span className="text-sm text-muted-foreground">
               Only sheets matching configured user names will be read: {getAllValidSheetNames().join(', ')}

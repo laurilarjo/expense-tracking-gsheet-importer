@@ -5,7 +5,8 @@ import { toast } from "@/hooks/use-toast";
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY ?? "";
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "";
 const DISCOVERY_DOCS = ["https://sheets.googleapis.com/$discovery/rest?version=v4"];
-const SCOPES = "https://www.googleapis.com/auth/spreadsheets";
+const SCOPES =
+  "https://www.googleapis.com/auth/spreadsheets openid email";
 
 // Constants for localStorage
 const TOKEN_STORAGE_KEY = "google_sheets_token";

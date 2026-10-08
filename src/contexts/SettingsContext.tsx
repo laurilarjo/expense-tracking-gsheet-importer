@@ -2,8 +2,16 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { AppSettings, SettingsContextType } from '../lib/types/settings';
 import { User } from '../lib/types/user';
 import { SettingsService } from '../lib/services/settings-service';
+import { syncWorkspaceSettings } from '../lib/services/workspace-sync-client';
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+
+/** Best-effort sync to bot storage; ignores auth/network failures. */
+function syncBotWorkspaceQuietly(settings: AppSettings) {
+  syncWorkspaceSettings(settings).catch(() => {
+    /* optional until Connect Telegram / api:dev is running */
+  });
+}
 
 export const useSettings = () => {
   const context = useContext(SettingsContext);
@@ -54,13 +62,17 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const updateSettings = (updates: Partial<AppSettings>) => {
     const settingsService = SettingsService.getInstance();
     settingsService.updateSettings(updates);
-    setSettings(settingsService.getSettings());
+    const next = settingsService.getSettings();
+    setSettings(next);
+    syncBotWorkspaceQuietly(next);
   };
 
   const addUser = (userData: Omit<User, 'id'>) => {
     const settingsService = SettingsService.getInstance();
     const newUser = settingsService.addUser(userData);
-    setSettings(settingsService.getSettings());
+    const next = settingsService.getSettings();
+    setSettings(next);
+    syncBotWorkspaceQuietly(next);
     return newUser;
   };
 
@@ -68,7 +80,9 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     const settingsService = SettingsService.getInstance();
     const updatedUser = settingsService.updateUser(userId, updates);
     if (updatedUser) {
-      setSettings(settingsService.getSettings());
+      const next = settingsService.getSettings();
+      setSettings(next);
+      syncBotWorkspaceQuietly(next);
     }
     return updatedUser;
   };
@@ -77,7 +91,9 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     const settingsService = SettingsService.getInstance();
     const success = settingsService.deleteUser(userId);
     if (success) {
-      setSettings(settingsService.getSettings());
+      const next = settingsService.getSettings();
+      setSettings(next);
+      syncBotWorkspaceQuietly(next);
     }
     return success;
   };
@@ -85,7 +101,9 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const setGoogleSheetsId = (id: string) => {
     const settingsService = SettingsService.getInstance();
     settingsService.setGoogleSheetsId(id);
-    setSettings(settingsService.getSettings());
+    const next = settingsService.getSettings();
+    setSettings(next);
+    syncBotWorkspaceQuietly(next);
   };
 
   const setLastSelectedUser = (userId: string) => {
@@ -97,7 +115,9 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const setExchangeratesApiKey = (key: string) => {
     const settingsService = SettingsService.getInstance();
     settingsService.setExchangeratesApiKey(key);
-    setSettings(settingsService.getSettings());
+    const next = settingsService.getSettings();
+    setSettings(next);
+    syncBotWorkspaceQuietly(next);
   };
 
   const refreshSettings = useCallback(() => {
@@ -108,7 +128,9 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const replaceSettings = (next: AppSettings) => {
     const settingsService = SettingsService.getInstance();
     settingsService.replaceSettings(next);
-    setSettings(settingsService.getSettings());
+    const saved = settingsService.getSettings();
+    setSettings(saved);
+    syncBotWorkspaceQuietly(saved);
   };
 
   const value: SettingsContextType = {

@@ -45,12 +45,24 @@ cy.reload();                      // only if you need the app to re-read localSt
 - Naming: e.g. `op-credit-card-sample.xml`, `op-bank-sample.csv`, `nordea-fi-sample.csv`.
 - Tests live next to code (`src/lib/parsers/__tests__/`) or in a top-level `src/test/` if you prefer.
 
+## Telegram bot (Vitest, no live Telegram)
+
+Bot logic is tested by feeding fake Telegram `Update` objects into `handleTelegramUpdate` with in-memory Blob, fake Telegram client, and fake Sheets writer. Fixtures reuse `test-fixtures/*.csv`. See `src/lib/bot/__tests__/`.
+
+Agent checklist (no secrets):
+
+```bash
+npm install
+npm run test:run
+```
+
 ## Commands
 
-- `npm run test` — Vitest watch mode (parser + unit)
+- `npm run test` — Vitest watch mode (parser + unit + bot)
 - `npm run test:run` — Vitest single run (CI / Vercel)
 - `npm run cypress:open` — Cypress UI
 - `npm run cypress:run` — Cypress headless (run locally or in GitHub Actions)
+- `npm run api:dev` / `npm run bot:dev` — local API + Telegram long poll (optional secrets)
 
 ## Vercel
 

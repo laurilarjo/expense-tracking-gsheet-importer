@@ -6,12 +6,20 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // Expose LOG_LEVEL to the SPA (in addition to default VITE_* vars)
+  envPrefix: ["VITE_", "LOG_"],
   define: {
     __BUILD_DATE__: JSON.stringify(new Date().toISOString()),
   },
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      "/api": {
+        target: "http://localhost:8787",
+        changeOrigin: true,
+      },
+    },
   },
   plugins: [
     react(),
