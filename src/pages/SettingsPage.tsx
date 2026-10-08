@@ -5,6 +5,7 @@ import { UserManager } from '@/components/Settings/UserManager';
 import { ExchangeRateConfig } from '@/components/Settings/ExchangeRateConfig';
 import { ImportSettings } from '@/components/Settings/ImportSettings';
 import { ExportSettings } from '@/components/Settings/ExportSettings';
+import { TelegramConnect } from '@/components/Settings/TelegramConnect';
 import { CategorizationTrainer } from '@/components/CategorizationTrainer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { NavigationBar } from '@/components/NavigationBar';
@@ -70,6 +71,8 @@ const SettingsPageContent: React.FC = () => {
         </Card>
         {/* Google Sheets Configuration */}
         <GoogleSheetsConfig />
+
+        <TelegramConnect />
 
         {/* User Management */}
         <Card className="w-full p-6 space-y-6 shadow-lg animate-fade-in">

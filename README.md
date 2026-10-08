@@ -75,7 +75,30 @@ Match the screenshot (swap in your own production host if different):
   * `https://larkki-expense-tracker.vercel.app/auth/callback` (your hosting domain here)
 
 Copy the client ID into `.env` as `VITE_GOOGLE_CLIENT_ID`.
- 
+
+### 3. Service account (Telegram bot → Google Sheets)
+
+Same Google Cloud project. No domain-wide delegation.
+
+1. **APIs & Services → Credentials → Create credentials → Service account**. Name e.g. `expense-bot`. Skip optional IAM roles.
+2. Open that service account → **Keys → Add key → Create new key → JSON**. Download once; do not commit it.
+3. From the JSON, copy `client_email` (looks like `expense-bot@PROJECT.iam.gserviceaccount.com`).
+4. In each spreadsheet the bot should write: **Share** → paste that email → role **Editor**.
+5. Put the **entire JSON key** as one line in Vercel env `GOOGLE_SERVICE_ACCOUNT_JSON` (and in local `.env` for `npm run bot:dev`).
+6. In the app **Settings → Telegram bot**, the service account email is shown after sync.
+
+The browser OAuth client above stays for the web app. The bot never stores your OAuth tokens.
+
+## Telegram bot
+
+1. Create a bot with [BotFather](https://t.me/BotFather); set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_BOT_USERNAME`.
+2. Deploy to Vercel with Blob store (`BLOB_READ_WRITE_TOKEN`) and the env vars from `.env.sample`. Set webhook:  
+   `https://api.telegram.org/bot<token>/setWebhook?url=https://<your-host>/api/telegram&secret_token=<TELEGRAM_WEBHOOK_SECRET>`
+3. Each person: open the web app → Settings → sync settings → share the sheet with the service account → **Connect Telegram** → add the bot to a channel (or tap **Join**).
+4. Local without Blob: `npm run api:dev` (filesystem `.data/blob/`) + `npm run bot:dev` (long polling). Vite proxies `/api` to port 8787.
+
+Bank statement files are **never** stored on the server or in Blob—only Telegram `file_id` session metadata.
+
 # Using the app
 
 1. Get an export xls, csv, txt file from your bank, and drop it to the root of this project.

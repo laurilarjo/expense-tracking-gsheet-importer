@@ -23,6 +23,8 @@ import { applyHighConfidenceCategories } from '../lib/utils/apply-high-confidenc
 
 interface CategorizationPredictorProps {
   transactions: Transaction[];
+  /** Member whose IndexedDB model to load. */
+  memberId?: string;
   /** Change this when a new file is loaded to clear prior predictions. */
   resetKey?: string;
   onPredictionsUpdate?: (predictions: CategorizationPrediction[]) => void;
@@ -36,6 +38,7 @@ interface PredictionState {
 
 export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = ({
   transactions,
+  memberId = 'default',
   resetKey,
   onPredictionsUpdate,
   onTransactionUpdate,
@@ -48,7 +51,7 @@ export const CategorizationPredictor: React.FC<CategorizationPredictorProps> = (
   const [modelMetadata, setModelMetadata] = useState<ModelMetadata | null>(null);
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   
-  const mlService = useMemo(() => new MLCategorizationService(), []);
+  const mlService = useMemo(() => new MLCategorizationService(memberId), [memberId]);
 
   const checkModelAvailability = useCallback(async () => {
     const isAvailable = await mlService.loadModelFromIndexedDB();

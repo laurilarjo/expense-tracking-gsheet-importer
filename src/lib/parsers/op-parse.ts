@@ -6,25 +6,26 @@ import { Transaction } from '../types/transaction';
  * Parses OP Finland bank's transaction files in CSV format
  */
 export async function parseOPFile(file: File): Promise<Transaction[]> {
+  // Read as text so PapaParse works in Node (File streaming uses FileReaderSync).
+  const csvText = await file.text();
   return new Promise((resolve, reject) => {
     const transactions: Transaction[] = [];
-    
-    Papa.parse(file, {
+
+    Papa.parse(csvText, {
       delimiter: ';',
       skipEmptyLines: true,
       complete: (results) => {
         try {
           // Skip the header row (index 0) and process data rows
           const dataRows = results.data.slice(1) as string[][];
-          
+
           dataRows.forEach((row: string[]) => {
             const transaction = parseLine(row);
             if (transaction) {
               transactions.push(transaction);
             }
           });
-          
-          console.log('OP-parse results:', transactions);
+
           resolve(transactions);
         } catch (error) {
           reject(error);

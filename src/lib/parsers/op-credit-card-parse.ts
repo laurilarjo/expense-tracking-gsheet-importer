@@ -1,4 +1,5 @@
 import { Transaction } from '../types/transaction';
+import { createDOMParser } from '../utils/dom-parser';
 
 /**
  * Parses OP Credit Card statement files in Finvoice XML format.
@@ -7,7 +8,7 @@ import { Transaction } from '../types/transaction';
  */
 export async function parseOPCreditCardFile(file: File): Promise<Transaction[]> {
   const text = await file.text();
-  const parser = new DOMParser();
+  const parser = await createDOMParser();
   const doc = parser.parseFromString(text, 'text/xml');
 
   const parseError = doc.querySelector('parsererror');
@@ -25,7 +26,6 @@ export async function parseOPCreditCardFile(file: File): Promise<Transaction[]> 
     if (tx) transactions.push(tx);
   });
 
-  console.log('OP Credit Card parse results:', transactions);
   return transactions;
 }
 

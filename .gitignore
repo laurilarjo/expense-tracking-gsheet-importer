@@ -62,6 +62,9 @@ typings/
 # dotenv environment variables file
 .env
 
+# Local BlobStore / bot data
+.data/
+
 # next.js build output
 .next
 
