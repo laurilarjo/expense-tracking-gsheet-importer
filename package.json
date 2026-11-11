@@ -18,7 +18,7 @@
     "cypress:run": "cypress run"
   },
   "engines": {
-    "node": "24.x"
+    "node": "26.x"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.20",
